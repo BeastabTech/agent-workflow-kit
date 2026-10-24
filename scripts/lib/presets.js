@@ -16,6 +16,7 @@ const PRESETS = {
     limits: {},
     skills: null,
     compact: false,
+    gate: { tests: true, addTests: false, maxBlocks: 1 },
     directive:
       'Preset auto: before non-trivial work, run `node .agents/tools/budget.js triage --task "<the request in one or two lines>"` (or the manager skill) and follow its mode, model tier and review. Small tasks stay solo and short; big or risky ones earn agents, a stronger model and an independent review. Repeating work (fix until green, review and fix, watch) goes through the loop skill with its hard stop.',
   },
@@ -27,6 +28,7 @@ const PRESETS = {
     limits: { maxParallel: 2, maxSpawns: 4 },
     skills: LITE_SKILLS,
     compact: true,
+    gate: { tests: false, addTests: false, maxBlocks: 0 },
     directive: '',
   },
   'low-tokens': {
@@ -37,6 +39,7 @@ const PRESETS = {
     limits: { maxParallel: 1, maxSpawns: 2, smallRepoFiles: 100000 },
     skills: LEAN_SKILLS,
     compact: true,
+    gate: { tests: true, addTests: false, maxBlocks: 1 },
     directive:
       'Preset low-tokens: spend as few tokens as the task allows. Do the work yourself; use a sub-agent only for a search that would read dozens of files. Read file ranges, not whole files; filter long output. Keep replies and Done reports to a few lines with evidence. Never trade away a safety check to save tokens.',
   },
@@ -48,18 +51,20 @@ const PRESETS = {
     limits: {},
     skills: null,
     compact: false,
+    gate: { tests: true, addTests: false, maxBlocks: 1 },
     directive: '', // the manager, delegate and self-review skills already carry the normal behaviour
   },
   best: {
     label: 'best',
-    pitch: 'Highest quality, spends more tokens. Strict hooks, tests with every behaviour change, edge-case list first, independent review of risky code, closeout on multi-part work.',
+    pitch: 'Strictest. Strict hooks, a test run and a test file required before done, independent review of risky code, closeout on multi-part work. Uses more tokens.',
     profile: 'strict',
     replyStyle: 'normal',
     limits: { maxFixRounds: 3 },
     skills: null,
     compact: false,
+    gate: { tests: true, addTests: true, maxBlocks: 2 },
     directive:
-      'Preset best: quality over tokens. (1) Before coding, list the edge cases for the change (empty, invalid, boundary, repeat, concurrent, old behaviour) and cover each with a test that fails without the change. (2) Run the real tests, type check and lint; never claim a result you did not see. (3) Before saying done, review your diff as a strict reviewer (self-review skill) and fix what you find. (4) Auth, payments, data, deletes and migrations also get an independent reviewer or security-reviewer sub-agent. (5) Work in several parts gets a closeout pass before you tell the user it is done. Small tasks stay solo; only the review is extra.',
+      'Preset best: thoroughness over tokens. (1) Before coding, list the edge cases for the change (empty, invalid, boundary, repeat, concurrent, old behaviour) and cover each with a test that fails without the change. (2) Run the real tests, type check and lint; never claim a result you did not see. (3) Before saying done, review your diff as a strict reviewer (self-review skill) and fix what you find. (4) Auth, payments, data, deletes and migrations also get an independent reviewer or security-reviewer sub-agent. (5) Work in several parts gets a closeout pass before you tell the user it is done. Small tasks stay solo; only the review is extra.',
   },
 };
 

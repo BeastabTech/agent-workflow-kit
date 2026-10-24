@@ -8,7 +8,7 @@ One choice at install time sets how much the kit does. Pick the edition that mat
 | `low-tokens` | Cutting cost; long sessions on a budget | `standard` | 9 core (exported, no plugin) | solo; at most 2 agents even on a big problem | caveman-lite |
 | `normal` | Default | `standard` | all (plugin) | by problem size | normal |
 | `auto` | Let the kit decide per task | `standard` | all (plugin) | sized per task: small work like low-tokens, medium like normal, big or risky like best | normal |
-| `best` | Work where a miss is expensive | `strict` | all (plugin) | by problem size, plus independent review and closeout | normal |
+| `best` | Work you want reviewed hard | `strict` | all (plugin) | by problem size, plus independent review and closeout | normal |
 
 ## How to choose
 
@@ -42,6 +42,10 @@ node .agents/tools/budget.js triage --files 2 --read 5 [--parts 1] [--risk high]
 | XL: big and split | planner, workers, closer | 2 workers at most | planner, workers, reviewer, closer |
 
 Risky areas (auth, payments, data, deletes, migrations) always get an independent reviewer and never a small model.
+
+## Do the editions help?
+
+Not measurably so far. On real tasks in a small and a large project the editions were within noise of using no kit, for both tokens and hidden-test results; see [benchmarks/real-tasks.md](benchmarks/real-tasks.md). What the kit does give you is deterministic: the safety hooks, the done gate, project memory and hand-off. Pick `lite` or `low-tokens` if you only want those without the overhead.
 
 ## Measuring editions
 

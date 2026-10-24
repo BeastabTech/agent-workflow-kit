@@ -14,6 +14,7 @@ The kit costs context (see "Measured impact" in the README) and claims to save r
 ## Results so far
 
 - [Delegation on a small search](benchmarks/delegation-small-search.md): the sub-agent cost about 6.7 times the tokens and 4 times the time, with no main-context saving. Harness: `node scripts/bench-delegation.js --repo <dir>` (spends real tokens).
+- [Editions on real tasks, small and large project](benchmarks/real-tasks.md): no edition beat no kit beyond noise; tokens within ±10% on the large project, higher on the small one. Harness: `scripts/bench-real.js`.
 - [Editions on one coding task](benchmarks/presets-coupons.md): `normal` and `best` passed 7/8 hidden tests every run vs 6.3 average with no kit, for 20-40% more tokens; `lite` and `low-tokens` in between. Harness: `node scripts/bench-presets.js --runs 3`.
 - Plugin evals (`claude plugin eval`, 1 run each): `closeout-fires` with the kit 1.00, without 0.00; `delegate-fires` with 1.00 (2 of 3 judge votes), without 0.00. Summary in the README.
 
@@ -37,6 +38,10 @@ The kit costs context (see "Measured impact" in the README) and claims to save r
 ## What to report
 
 Task size, model, number of runs per arm, the table of medians (fresh tokens main / sub-agents, peak context, wall time, rubric score), and what went wrong. Say plainly when the kit made things worse. Open an issue with the "Benchmark result" template or a pull request adding a row to a results file under `docs/benchmarks/`.
+
+## Always-loaded cost of the kit
+
+`npm run stats` prints it (about 3.9k tokens of skill and agent descriptions in every session, about 1.0k for the `AGENTS.md` index in a new project; cold start with the index is 61% cheaper than reading every context doc). It is an estimate (characters / 4).
 
 ## Expectations
 

@@ -26,7 +26,7 @@
     "preset": {
       "type": "string",
       "title": "Edition: auto, lite, low-tokens, normal or best",
-      "description": "auto = the kit sizes each task and decides. lite = safety net only, least overhead. low-tokens = cheapest sessions, short replies, no sub-agents unless needed. normal = balanced (default). best = highest quality, strict hooks, tests and independent review, spends more tokens.",
+      "description": "auto = the kit sizes each task and decides. lite = safety net only, least overhead. low-tokens = cheapest sessions, short replies, no sub-agents unless needed. normal = balanced (default). best = strictest: strict hooks, a test run and a test file before done, independent review of risky code, uses more tokens.",
       "default": "normal"
     },
     "hooks_enabled": {

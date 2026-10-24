@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Done gate: a Stop hook that, after code edits, requires a test run (and, in `best`, a test file) before the agent may finish; capped per session.
+- Benchmarks on real tasks in a small and a large project (`scripts/bench-real.js`, `bench-summary.js`, `docs/benchmarks/real-tasks.md`): no edition beat no kit beyond noise. Measured numbers moved from the README to `docs/BENCHMARK.md`; edition descriptions no longer claim better quality.
+
 ## 0.2.0
 
 - `auto` edition and `budget.js triage --task "<request>"`: the kit estimates files, reads, parts and risk from the task text and the repo, then decides mode, model tier, agents and review.

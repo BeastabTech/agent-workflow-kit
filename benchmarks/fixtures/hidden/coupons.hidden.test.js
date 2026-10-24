@@ -1,7 +1,7 @@
 // Hidden acceptance tests for the coupon task. The agent never sees this file.
 const test = require('node:test');
 const assert = require('node:assert');
-const { createCart, addItem, total, applyCoupon } = require('./cart/lib/cart');
+const { createCart, addItem, total, applyCoupon } = require('../lib/cart');
 
 const cart = () => addItem(addItem(createCart(), 'a', 1000, 2), 'b', 333, 1); // subtotal 2333
 const now = new Date('2026-06-01T00:00:00Z');

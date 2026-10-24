@@ -162,3 +162,35 @@ test('profiles: strict turns a spawn-budget warning into a question', () => {
   assert.equal(decision(spawn({})), 'warn');
   assert.equal(decision(spawn({ AWK_PROFILE: 'strict' })), 'ask');
 });
+
+test('done gate: blocks a stop after code edits without tests, once, per edition', () => {
+  const fs2 = require('fs');
+  const path2 = require('path');
+  const { tmpRepo, runHook } = require('./helpers');
+  const { dir } = tmpRepo({});
+  const T = path2.join(dir, 't.jsonl');
+  const use = (id, name, input) => JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', id, name, input }] } });
+  const res = (id, text) => JSON.stringify({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: id, content: text }] } });
+  const write = (...l) => fs2.writeFileSync(T, l.join('\n') + '\n');
+  const stop = (env, sid) => runHook('stop', { cwd: dir, transcript_path: T, session_id: sid }, env);
+  const blocked = (r) => /"decision":"block"/.test(r.stdout || r);
+
+  write(use('1', 'Edit', { file_path: '/p/src/a.ts' }));
+  assert.ok(blocked(stop({ AWK_PRESET: 'normal' }, 's1')), 'edit without a test run blocks');
+  assert.ok(!blocked(stop({ AWK_PRESET: 'normal' }, 's1')), 'second stop is allowed (once per session)');
+  assert.ok(!blocked(stop({ AWK_PRESET: 'lite' }, 's2')), 'lite never blocks');
+  assert.ok(!blocked(stop({ AWK_PRESET: 'normal', AWK_DISABLE: 'done-gate' }, 's3')));
+
+  write(use('1', 'Edit', { file_path: '/p/src/a.ts' }), use('2', 'Bash', { command: 'cd apps/x && npx jest src/a' }), res('2', 'Tests: 3 passed, 3 total'));
+  assert.ok(!blocked(stop({ AWK_PRESET: 'normal' }, 's4')), 'tests ran and passed');
+  assert.ok(blocked(stop({ AWK_PRESET: 'best' }, 's5')), 'best also wants a test file touched');
+
+  write(use('1', 'Edit', { file_path: '/p/src/a.ts' }), use('2', 'Write', { file_path: '/p/src/a.spec.ts' }), use('3', 'Bash', { command: 'npx jest' }), res('3', 'Tests: 1 failed, 2 passed, 3 total'));
+  assert.ok(blocked(stop({ AWK_PRESET: 'normal' }, 's6')), 'a failing last run blocks');
+
+  write(use('1', 'Edit', { file_path: '/p/README.md' }));
+  assert.ok(!blocked(stop({ AWK_PRESET: 'best' }, 's7')), 'docs only: nothing to test');
+
+  write(use('1', 'Edit', { file_path: '/p/src/a.ts' }), use('2', 'Write', { file_path: '/p/src/a.spec.ts' }), use('3', 'Bash', { command: 'npx jest' }), res('3', 'Tests: 3 passed, 3 total'));
+  assert.ok(!blocked(stop({ AWK_PRESET: 'best' }, 's8')), 'best satisfied');
+});

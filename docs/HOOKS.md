@@ -8,6 +8,7 @@ All hooks are plain Node.js with no dependencies. They **fail open**: broken inp
 | Edit guard | PreToolUse `Edit`, `Write`, `MultiEdit`, `NotebookEdit` | `scripts/hooks/pre-edit.js` |
 | Spawn budget | PreToolUse `Agent` (also `Task`) | `scripts/hooks/pre-agent.js` |
 | Spawn finished | SubagentStop | `scripts/hooks/subagent-stop.js` |
+| Done gate | Stop | `scripts/hooks/stop.js` |
 | Session note | SessionStart | `scripts/hooks/session-start.js` |
 | Git guard (any tool) | git `pre-commit`, `commit-msg` | `scripts/git-guard.js` (copied to `.agents/tools/`) |
 
@@ -29,6 +30,10 @@ All hooks are plain Node.js with no dependencies. They **fail open**: broken inp
 | `protected-files` | edit of a path matching `protectedFiles` | ask | yes |
 | `env-files` | edit of `.env`, `.env.local` and similar (not `.env.example`) | ask | no |
 | `agent-budget` | starting a sub-agent | warn from `warnAtPct` of a limit, a repeated or oversized brief; a warning when an `explorer` starts in a repo under `smallRepoFiles` tracked files; ask when `maxParallel`, `maxSpawns` or `tokenBudget` would be crossed | no (defaults apply) |
+
+### Done gate
+
+When the agent is about to stop after changing code, the Stop hook reads the transcript and checks what the agent actually did: did it run a test command after its last edit, did that run fail, and (in `best`) did it add or update any test file. If not, it blocks the stop with the specific reason, once (twice in `best`) per session, so it cannot loop. Docs-only changes are ignored. Per edition: `lite` off, `low-tokens`, `auto` and `normal` require a passing test run, `best` also requires a test file. State in `.agents/.gate/`. Turn it off with `AWK_DISABLE=done-gate`; `minimal` profile turns it off too. The test command is recognised by name (jest, pytest, go test, npm test, ...) or from `commands.test` in `.agents/config.json`.
 
 ### Spawn budget
 

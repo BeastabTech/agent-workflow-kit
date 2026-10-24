@@ -89,13 +89,13 @@ test('the web smoke script parses and explains a missing Playwright', () => {
   if (r.status === 2) assert.match(r.stderr, /Playwright not found/);
 });
 
-test('README numbers match the repo (skills, agents, measured table)', () => {
+test('README lists every skill and agent; the stats quoted in docs/BENCHMARK.md match the repo', () => {
   const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
+  const bench = fs.readFileSync(path.join(ROOT, 'docs', 'BENCHMARK.md'), 'utf8');
   const { measure } = require('../scripts/stats');
   const m = measure();
-  assert.ok(readme.includes(`${m.skills} skill + ${m.agents} agent descriptions | ~${(m.alwaysOnTokens / 1000).toFixed(1)}k`), 'always-loaded row is stale: run npm run stats and update the README');
-  assert.ok(readme.includes(`reading all ${m.contextDocs} context docs`), 'context doc count is stale');
-  assert.ok(readme.includes(`| ~${(m.coldStartWithIndex / 1000).toFixed(1)}k |`), 'cold start row is stale');
+  assert.ok(bench.includes(`about ${(m.alwaysOnTokens / 1000).toFixed(1)}k tokens of skill and agent descriptions`), 'always-loaded number in docs/BENCHMARK.md is stale: run npm run stats and update it');
+  assert.ok(bench.includes(`${Math.round((1 - m.coldStartWithIndex / m.coldStartReadEverything) * 100)}% cheaper`), 'cold start saving in docs/BENCHMARK.md is stale');
   for (const name of fs.readdirSync(path.join(ROOT, 'skills'))) assert.ok(readme.includes(`\`${name}\``), `README does not list skill ${name}`);
   for (const f of fs.readdirSync(path.join(ROOT, 'agents'))) assert.ok(readme.includes(`\`${f.replace(/\.md$/, '')}\``), `README does not list agent ${f}`);
 });

@@ -1,0 +1,23 @@
+{
+  "project": "small",
+  "links": [],
+  "allow": ["Bash(node:*)", "Bash(npm:*)"],
+  "regression": "node --test",
+  "tasks": [
+    {
+      "id": "cart-remove", "size": "S", "base": "@BASE@", "fix": "@FIX@",
+      "hidden": ["test/remove-item.hidden.test.js"], "hiddenCmd": "node --test test/remove-item.hidden.test.js",
+      "prompt": "In lib/cart.js add removeItem(cart, sku, qty): with no qty it removes the whole line for that sku, with a qty it reduces the line and removes it when nothing is left. Run the tests when you are done and tell me briefly what you changed."
+    },
+    {
+      "id": "cart-coupons", "size": "M", "base": "@BASE@", "fix": "@FIX@",
+      "hidden": ["test/coupons.hidden.test.js"], "hiddenCmd": "node --test test/coupons.hidden.test.js",
+      "prompt": "In lib/cart.js add coupon support: applyCoupon(cart, coupon, now) where a coupon is { code, type: \"percent\"|\"fixed\", value, expires? }. The coupon reduces total(cart). Make it work properly for a real shop. Run the tests when you are done and tell me briefly what you did."
+    },
+    {
+      "id": "cart-checkout", "size": "L", "base": "@BASE@", "fix": "@FIX@",
+      "hidden": ["test/checkout.hidden.test.js"], "hiddenCmd": "node --test test/checkout.hidden.test.js",
+      "prompt": "Turn the cart into a checkout. Add quote(cart, { coupon, taxRate, now }) to lib/cart.js returning { subtotal, discount, shipping, tax, total }, all integer cents, without changing the cart. coupon is optional, { code, type: \"percent\"|\"fixed\", value, expires? }: percent rounds half up, a coupon never takes more than the subtotal, expired or invalid coupons are rejected. Shipping is a flat 500, free for an empty cart and free when the amount after the discount is 5000 or more. taxRate is a percent (default 0, must be 0-100) applied to the amount after the discount, not to shipping, rounded half up. total = subtotal - discount + shipping + tax. Run the tests when you are done and tell me briefly what you did."
+    }
+  ]
+}

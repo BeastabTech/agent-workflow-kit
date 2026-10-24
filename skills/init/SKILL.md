@@ -22,7 +22,7 @@ Target: `$ARGUMENTS` (default: the current repo root).
    - `low-tokens`: cheapest sessions; short replies, solo unless the problem is big, nine core skills, no plugin needed.
    - `auto`: the kit sizes each task itself and behaves like low-tokens, normal or best as needed (good if they do not want to choose).
    - `normal`: balanced default; full skills and hooks, solo for small work, self-review before done.
-   - `best`: highest quality, more tokens; strict hooks, tests with edge cases first, independent review of risky code, closeout on multi-part work.
+   - `best`: strictest, more tokens; strict hooks, a test run and a test file before done, independent review of risky code, closeout on multi-part work.
    Pass the answer as `"preset"` in the answers JSON (or `--preset <name>`). Details: `docs/EDITIONS.md`.
 1. Project name and one-line summary.
 2. Stack and source folders.

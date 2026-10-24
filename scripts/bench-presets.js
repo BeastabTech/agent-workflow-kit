@@ -58,7 +58,7 @@ function freshRepo(arm) {
 
 function hiddenScore(dir) {
   const t = path.join(dir, 'test', 'zz-hidden.test.js');
-  fs.writeFileSync(t, fs.readFileSync(path.join(FIXTURE, 'cart-hidden.test.js'), 'utf8').replace('./cart/lib/cart', '../lib/cart'));
+  fs.writeFileSync(t, fs.readFileSync(path.join(FIXTURE, 'hidden', 'coupons.hidden.test.js'), 'utf8').replace('../lib/cart', '../lib/cart'));
   const r = spawnSync('node', ['--test', t], { cwd: dir, encoding: 'utf8' });
   const m = /# pass (\d+)/.exec(r.stdout) || /ℹ pass (\d+)/.exec(r.stdout);
   fs.rmSync(t, { force: true });

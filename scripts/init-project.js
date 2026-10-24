@@ -316,7 +316,7 @@ function init(opts) {
     report.next = (report.next || []).concat(['This edition uses the exported skills and git hooks instead of the plugin: do not enable the plugin for the lowest always-loaded cost (the plugin lists every skill, about 3.8k tokens).']);
   }
 
-  const ignore = ['.agents/LOG.md', '.agents/.read/', '.agents/.budget/', '.agents/.loops/'];
+  const ignore = ['.agents/LOG.md', '.agents/.read/', '.agents/.budget/', '.agents/.loops/', '.agents/.gate/'];
   if (n.stateSync !== 'git') ignore.push('.agents/STATE.md', '.agents/HANDOFF.md', '.agents/BUGS.md');
   report.gitignore = ensureGitignore(target, ignore, dry);
   return report;
