@@ -1,0 +1,33 @@
+---
+name: plan
+description: Plan a feature or change before writing code - restate the goal, read the relevant code and docs, list questions with recommendations, then give a short step plan with files, risks, tests and rollout, and wait for the owner's OK. Use for any non-trivial feature, refactor, migration or cross-service change, or when the user asks for a plan or design.
+---
+
+# Plan before code
+
+## 1. Understand
+- Restate the goal in two lines and what "done" looks like.
+- Read `AGENTS.md`, the feature file, and the code you will touch (use the `explorer` agent for wide searches).
+- Search before you build: an existing helper, library or pattern in the repo beats new code.
+
+## 2. Ask
+One numbered message with every blocking question, each with your recommended answer and why. Wait.
+
+## 3. Plan (keep it to one screen)
+
+```markdown
+## Plan: <name>
+Goal: <one line>
+Approach: <2–4 lines; why this over the obvious alternative>
+Steps:
+1. <step> — files: <paths> — test: <what proves it>
+2. ...
+Contracts touched: <APIs, events, schema; additive only>
+Flag: <NAME> (default off) · Rollout: <order of deploys> · Rollback: <how>
+Risks: <data, security, performance, other teams>
+Parallel: <steps that can run in separate agents/worktrees; steps that must be sequential>
+Out of scope: <what you will not do>
+```
+
+## 4. Wait for OK
+Do not write code until the owner agrees. If the work splits into independent steps, offer to run them as separate agents (see the `manager` skill).
