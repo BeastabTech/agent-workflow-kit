@@ -14,7 +14,7 @@ Thanks for helping. Keep the kit small, generic and dependency-free.
 ```bash
 node --test tests/*.test.js
 claude plugin validate . --strict
-claude plugin eval . --runs 1 --case '<the case you touched>'   # if you changed a skill's description or behaviour
+claude plugin eval . --runs 1 --judge-model sonnet --case '<the case you touched>'   # if you changed a skill's description or behaviour
 ```
 
 Commits use conventional commits (`feat(skills): add x`, `fix(hooks): y`), with no AI attribution trailers.

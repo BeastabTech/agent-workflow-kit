@@ -16,33 +16,28 @@ Everything is plain Markdown and dependency-free Node.js.
 
 ---
 
-## Install
+## Quick start
 
-### Claude Code (plugin)
+**Claude Code.** Run these two commands inside Claude Code:
 
-```bash
-claude plugin marketplace add BeastabTech/agent-workflow-kit
-claude plugin install agent-workflow-kit@agent-workflow-kit
+```text
+/plugin marketplace add BeastabTech/agent-workflow-kit
+/plugin install agent-workflow-kit@agent-workflow-kit
 ```
 
-Then, inside a repo, ask: **"set up the agent workflow here"**. The `init` skill interviews you and writes the files. Skills are namespaced, for example `/agent-workflow-kit:bug-intake`.
+Then, in your repo, say **"set up the agent workflow here"**. That's it. Skills are namespaced, for example `/agent-workflow-kit:bug-intake`.
 
-### Any other agent (no plugin)
-
-```bash
-git clone https://github.com/BeastabTech/agent-workflow-kit
-cp agent-workflow-kit/templates/answers.example.json answers.json   # edit it
-node agent-workflow-kit/scripts/init-project.js --target ./my-repo --answers answers.json --with-git-hooks
-node agent-workflow-kit/scripts/export-skills.js --target ./my-repo --to agents
-```
-
-Then turn on the git hooks in that repo (this changes its git config, so it is your call):
+**Codex, Cursor, Gemini CLI, Copilot or anything else.** Run these from your repo's root folder:
 
 ```bash
-git -C my-repo config core.hooksPath .githooks
+git clone https://github.com/BeastabTech/agent-workflow-kit ../agent-workflow-kit
+node ../agent-workflow-kit/scripts/init-project.js --target . --tools codex,cursor,gemini,copilot --with-git-hooks
+node ../agent-workflow-kit/scripts/export-skills.js --target . --to agents
 ```
 
-Add `--dry-run` to see what would be written. Existing files are never overwritten unless you pass `--force`.
+Optional: `git config core.hooksPath .githooks` turns on the git guard for every tool.
+
+Existing files are never overwritten unless you pass `--force`, and `--dry-run` previews the changes. Update, remove, and the terminal (`claude plugin ...`) version are in [docs/INSTALL.md](docs/INSTALL.md).
 
 ---
 
@@ -162,7 +157,7 @@ Personal plugin options are set when you enable the plugin: `hooks_enabled`, `bl
 ```bash
 node --test tests/*.test.js                       # hook, init, export, git-guard and message-log tests
 claude plugin validate . --strict                 # manifest checks
-claude plugin eval . --runs 1 --case 'bug-intake*'  # behaviour evals (uses model tokens)
+claude plugin eval . --runs 1 --judge-model sonnet   # behaviour evals (uses model tokens)
 claude --plugin-dir .                             # try it locally
 ```
 

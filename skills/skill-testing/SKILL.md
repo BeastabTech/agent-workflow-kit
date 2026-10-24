@@ -40,7 +40,7 @@ Graders:
 Run:
 ```bash
 claude plugin eval <plugin-dir> --runs 1 --case '<glob>'     # quick
-claude plugin eval <plugin-dir> --runs 3                      # before release; compares with a no-plugin baseline
+claude plugin eval <plugin-dir> --runs 3 --judge-model sonnet # before release; compares with a no-plugin baseline (the default haiku judge misreads long answers)
 ```
 Each run costs model tokens; start with `--runs 1` on one case. Add `evals/results/` to `.gitignore`.
 

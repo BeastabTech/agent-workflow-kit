@@ -12,3 +12,4 @@ First release.
 - `export-skills.js`: copies skills for other agents.
 - `git-guard.js`: tool-neutral commit checks.
 - Tests (`node --test`) and behaviour evals (`claude plugin eval`).
+- Quick start in the README and a step-by-step guide in `docs/INSTALL.md`.
