@@ -3,7 +3,7 @@
 ## Never break existing behaviour
 
 - Additive changes only: optional request fields, new response fields, nullable or defaulted columns, new routes.
-- Never rename or remove routes, fields, enum values, events, queues or env vars that something may use. Find every caller first (`grep -rn "<symbol>"`, plus sibling repos for contracts).
+- Never rename or remove routes, fields, enum values, events, queues or env vars that something may use. Find every caller first (`git grep -n "<symbol>"`, plus sibling repos for contracts).
 - New flows sit behind an env flag that defaults to off.
 - Side effects (email, webhooks, events) are fail-open: catch, log, continue. Say so in a comment when a side effect is the point and must fail the request.
 - Scheduled jobs that may run on several instances take a lock per run.

@@ -47,7 +47,7 @@ Wait for answers. Do not write anything before.
 
 ## 4. Check and report
 
-- `grep -rn "{{" AGENTS.md docs/context .claude/rules .agents` must find nothing.
+- `git grep -n --untracked "{{" -- AGENTS.md docs/context .claude/rules .agents` must find nothing.
 - `node .agents/tools/msg.js where` prints the log path.
 - Report: files written, files kept, what the owner should review, and the next step: "start a manager session with the `manager` skill, or just work: the rules apply already."
 - Do not commit unless asked. If asked: stage the written paths explicitly, `docs(agents): add agent workflow kit`.

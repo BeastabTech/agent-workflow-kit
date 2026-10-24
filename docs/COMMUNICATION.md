@@ -10,7 +10,9 @@ The full protocol for a project lives in its `docs/context/AGENT_COMMUNICATION.m
 - **Reviewer**: read-only agent that reviews a diff before done.
 
 ## Message types
-`brief`, `question`, `answer`, `claim`, `release`, `review-request`, `review`, `done`, `blocked`, `note`, `approval-request`.
+`brief`, `question`, `answer`, `claim`, `release`, `review-request`, `review`, `done`, `blocked`, `note`, `approval-request`, `closeout`, `instruction`. An `instruction` is an order from the human passed on by the manager (or typed straight to a worker); it is never an approval.
+
+`node .agents/tools/msg.js roster` lists every agent seen in the log with its state, last message, topic and open claims.
 
 ## The log tool
 ```bash

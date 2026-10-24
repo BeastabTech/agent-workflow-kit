@@ -9,6 +9,7 @@ How several agents (any tool) and humans work on this repo without clashing.
 - **Worker:** one task, one set of files. Asks first, builds, self-reviews, reports with evidence.
 - **State owner:** the only writer of `.agents/STATE.md`. Others send it updates.
 - **Reviewer:** reads a finished diff against the rules and the self-review list. Read-only.
+- **Closer:** runs last. Checks the whole feature, fixes clear small gaps, asks the human only for real decisions, and sends the manager a Closeout report.
 
 One person or one agent can hold several roles on a small project.
 
@@ -21,7 +22,7 @@ Channels:
 - **Tool-native messaging** when the tool has it (session messages, agent teams). Fast; stays in that tool.
 - **Message log** for everything else, and as the record: `node .agents/tools/msg.js post --from <me> --to <them> --type <type> --topic "<topic>"`. Read with `inbox --for <me>`. It lives in the main checkout's `.agents/LOG.md`, so all worktrees share it.
 
-Types: `brief`, `question`, `answer`, `claim`, `release`, `review-request`, `review`, `done`, `blocked`, `note`, `approval-request`.
+Types: `brief`, `question`, `answer`, `claim`, `release`, `review-request`, `review`, `done`, `blocked`, `note`, `approval-request`, `closeout`, `instruction`.
 
 ## One task, one owner
 
@@ -45,4 +46,4 @@ Production changes, data changes, secrets, money, irreversible actions and pushe
 
 ## In-code questions
 
-Put open items in the doc comment above the function: `@todo <work>` and `@question <question> (asked <date>, <where>)`. List them with `grep -rn "@todo\|@question" {{SOURCE_DIRS}}`.
+Put open items in the doc comment above the function: `@todo <work>` and `@question <question> (asked <date>, <where>)`. List them with `git grep -nE "@todo|@question" -- {{SOURCE_DIRS}}`.

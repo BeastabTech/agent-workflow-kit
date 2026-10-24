@@ -42,6 +42,7 @@ This file is an **index** for every coding agent and every new developer. Read i
 | Known problems and how to check them | `docs/context/DEBUGGING.md` |
 | Feature behaviour (one file per feature) | `docs/context/features/` |
 | Current state, hand-off, bugs, message log | `.agents/` |
+| Spawn limits, who is doing what | `node .agents/tools/budget.js plan\|status`, `node .agents/tools/msg.js roster` |
 
 ## Save tokens
 

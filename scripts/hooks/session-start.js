@@ -8,6 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const { loadConfig, sharedRoot } = require('../lib/config');
 const { readInput } = require('../lib/hook-io');
+const { limitsFrom } = require('../lib/budget');
 
 const STYLES = {
   'caveman-lite': 'Reply style (personal setting): terse. Drop filler, pleasantries and hedging; keep full sentences, exact code, paths and numbers.',
@@ -33,6 +34,8 @@ function main() {
   const agentsDir = path.join(cfg.root, '.agents');
   if (fs.existsSync(agentsDir)) {
     notes.push(`This project uses the agent workflow kit. Work mode: ${cfg.workMode}. Index: AGENTS.md. State: .agents/STATE.md.`);
+    const lim = limitsFrom(cfg);
+    notes.push(`Sub-agent limits: ${lim.maxParallel} at once, ${lim.maxSpawns} per session. Check a plan with: node .agents/tools/budget.js plan --agents <n>. Use the delegate skill; warn the user before spawning many.`);
     const handoff = path.join(agentsDir, 'HANDOFF.md');
     try {
       const st = fs.statSync(handoff);

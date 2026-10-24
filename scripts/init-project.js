@@ -10,6 +10,8 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { DEFAULT_LIMITS } = require('./lib/budget');
+const { renderFor } = require('./lib/agents');
 
 const KIT = path.resolve(__dirname, '..');
 const TEMPLATES = path.join(KIT, 'templates', 'project');
@@ -118,7 +120,7 @@ function vars(n) {
 }
 
 function render(text, v) {
-  return text.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in v ? v[k] : m));
+  return text.replace(/\r\n/g, '\n').replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in v ? v[k] : m));
 }
 
 function walk(dir, base = dir) {
@@ -187,6 +189,9 @@ function init(opts) {
   }
   if (opts['with-optional']) sources.push(...walk(OPTIONAL).map((rel) => [path.join(OPTIONAL, rel), rel]));
   sources.push([path.join(KIT, 'scripts', 'agent-msg.js'), '.agents/tools/msg.js']);
+  sources.push([path.join(KIT, 'scripts', 'agent-budget.js'), '.agents/tools/budget.js']);
+  sources.push([path.join(KIT, 'scripts', 'lib', 'config.js'), '.agents/tools/lib/config.js']);
+  sources.push([path.join(KIT, 'scripts', 'lib', 'budget.js'), '.agents/tools/lib/budget.js']);
   if (n.gitHooks) {
     sources.push([path.join(KIT, 'scripts', 'git-guard.js'), '.agents/tools/git-guard.js']);
     sources.push([path.join(KIT, 'scripts', 'lib', 'secrets.js'), '.agents/tools/lib/secrets.js']);
@@ -224,6 +229,20 @@ function init(opts) {
     report.written.push(relOut);
   }
 
+  // Agent definitions for tools that have an agents folder, generated from agents/*.md.
+  for (const { rel, text } of renderFor(n.tools.filter((t) => t !== 'claude'))) {
+    const dest = path.join(target, rel);
+    if (fs.existsSync(dest) && !opts.force) {
+      report.kept.push(rel);
+      continue;
+    }
+    if (!dry) {
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, text);
+    }
+    report.written.push(rel);
+  }
+
   if (n.gitHooks) {
     for (const [rel, body] of Object.entries(GIT_HOOKS)) {
       const dest = path.join(target, rel);
@@ -253,6 +272,7 @@ function init(opts) {
     destructiveDb: 'deny',
     secretScan: { allowPaths: [] },
     commands: n.commands,
+    limits: DEFAULT_LIMITS,
     timezone: n.timezone,
     tools: n.tools,
   };
@@ -266,7 +286,7 @@ function init(opts) {
     report.written.push('.agents/config.json');
   }
 
-  const ignore = ['.agents/LOG.md', '.agents/.read/'];
+  const ignore = ['.agents/LOG.md', '.agents/.read/', '.agents/.budget/'];
   if (n.stateSync !== 'git') ignore.push('.agents/STATE.md', '.agents/HANDOFF.md', '.agents/BUGS.md');
   report.gitignore = ensureGitignore(target, ignore, dry);
   return report;

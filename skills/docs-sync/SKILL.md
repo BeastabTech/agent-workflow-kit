@@ -34,5 +34,5 @@ Use the table in `docs/context/README.md`. Defaults:
 ## 4. Check
 
 - Links you added resolve (`ls` the paths).
-- No duplicate truth: `grep -rn "<key term>" docs AGENTS.md` shows one current statement.
+- No duplicate truth: `git grep -n "<key term>" -- docs AGENTS.md` shows one current statement.
 - List the docs you updated in the Done report.

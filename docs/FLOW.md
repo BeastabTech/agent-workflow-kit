@@ -63,3 +63,53 @@ flowchart LR
     C --> SS[SessionStart hook: read the hand-off]
     SS --> Res[handoff resume: check state, continue the next step]
 ```
+
+## Closeout
+
+```mermaid
+flowchart LR
+    D[All workers done, reviews clear] --> C[closer: split feature into parts]
+    C --> H[Hunt: code, tests, docs, edge cases, security, old flows]
+    H --> R[Run checks and smoke tests]
+    R --> S{Each finding}
+    S -->|clear, small, in scope| F[Fix + test] --> R2[Re-test once]
+    S -->|decision, risk, scope| A[Ask the human: one message, with a recommendation]
+    S -->|large or out of scope| N[Note with suggestion]
+    R2 --> REP[Closeout report to manager]
+    A --> REP
+    N --> REP
+    REP --> U[Manager tells the user: done, or what needs a person]
+```
+
+## Spawn budget
+
+```mermaid
+flowchart TD
+    G[Goal] --> PL[planner or manager: tasks, owners, agent count]
+    PL --> BP[budget.js plan --agents n --parallel p]
+    BP -->|warnings| U[Manager shows the user, with a recommendation]
+    U --> D{User decides}
+    D -->|merge tasks, run in waves, or raise a limit| PL
+    BP -->|within limits| S[Spawn]
+    D -->|go ahead| S
+    S --> HK[PreToolUse hook counts the spawn]
+    HK -->|near a limit| W[warn: manager passes it on]
+    HK -->|would cross a limit| Q[ask the user]
+    HK -->|ok| RUN[Agent runs]
+    W --> RUN
+    Q -->|yes| RUN
+    RUN --> ST[SubagentStop frees the slot]
+```
+
+## You and the team
+
+```mermaid
+flowchart LR
+    U[You] -->|goal, questions, decisions| M[Manager]
+    U -.->|can open any session| W[Worker session]
+    M -->|instruction message, never an approval| W
+    W -->|done, blocked, question| M
+    W -.->|note: what you told it directly| M
+    M -->|team-status: msg.js roster + budget.js status| U
+    U -->|typed approval, in the session that acts| W
+```

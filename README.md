@@ -7,7 +7,9 @@ It gives a repo:
 - **Short project memory.** A small `AGENTS.md` index plus one-topic docs that agents open only when needed.
 - **Team rules in the repo, not in someone's personal memory.** Never-break rules, git and approval rules, code comments, Definition of Done with evidence.
 - **Safe ways to work.** Safe-change and self-review checklists, peer review, bug intake, TDD, debugging.
-- **Several agents at once.** A manager and workers, one state owner, file claims, and agent-to-agent messages (through the manager or directly). It works in one shared checkout or in separate git worktrees.
+- **Several agents at once.** A manager and workers, one state owner, file claims, and agent-to-agent messages (through the manager or directly). It works in one shared checkout or in separate git worktrees. You talk to the manager; it relays instructions to any worker, shows who is doing what, and you can still open a worker's session yourself.
+- **A spawn budget.** Limits on sub-agents running at once and per session, a plan check before anything starts, and a warning (or a question to you) before a limit is crossed.
+- **A closer.** After the workers finish, one agent checks the whole feature, fixes clear small gaps, asks you only for real decisions and reports to the manager.
 - **Continuity.** Hand-off and resume across context resets and machines, plus a token budget and auto-compact setup.
 - **Guards.** Hooks that block AI commit trailers, secrets, force-pushes and destructive database commands, and ask before protected-file edits and pushes to protected branches. A tool-neutral git-hook version protects every agent.
 - **Practical skills.** Frontend design, responsive UI, HTML pages, design review, web-app testing, mobile apps, API design, DB migrations, security audit, AWS and GCP ops, time zones, file uploads, AI features, skill testing, and caveman (terse) mode.
@@ -46,6 +48,8 @@ Existing files are never overwritten unless you pass `--force`, and `--dry-run` 
 ```mermaid
 flowchart TD
     U[Human] -->|request, approvals| M[Manager agent]
+    M -->|budget plan, warns you| BG{{budget.js + spawn hook}}
+    BG --> M
     M -->|brief| W1[Worker A]
     M -->|brief| W2[Worker B]
     W1 <-->|peer messages, review requests| W2
@@ -53,6 +57,8 @@ flowchart TD
     M --> LOG
     S[State owner] -->|only writer| ST[(.agents/STATE.md)]
     LOG --> S
+    W1 & W2 -->|all done| CL[closer agent]
+    CL -->|closeout report: done / needs a person| M
     W1 & W2 -->|reads first| IDX[AGENTS.md -> docs/context/*]
     W1 -->|before done| SR[self-review + Definition of Done]
     SR --> RV[reviewer agent]
@@ -90,8 +96,9 @@ More: [docs/FLOW.md](docs/FLOW.md).
 | Area | Skills |
 |---|---|
 | Setup and memory | `init`, `docs-sync`, `context-budget`, `caveman` |
-| Several agents | `manager`, `state-keeper`, `agent-comms`, `handoff`, `peer-review`, `team-message` |
-| Everyday engineering | `plan`, `tdd`, `debug`, `bug-intake`, `safe-change`, `self-review`, `git-workflow` |
+| Several agents | `manager`, `state-keeper`, `agent-comms`, `handoff`, `peer-review`, `team-message`, `team-status` |
+| Everyday engineering | `plan`, `tdd`, `debug`, `bug-intake`, `safe-change`, `self-review`, `closeout`, `git-workflow` |
+| Low-context delegation | `delegate` |
 | Backend and data | `api-design`, `db-migration`, `file-uploads`, `timezones-i18n`, `ai-feature`, `security-audit` |
 | Frontend and apps | `frontend-design`, `responsive-ui`, `html-page`, `design-review`, `webapp-testing`, `mobile-app` |
 | Cloud and release | `aws-ops`, `gcp-ops`, `deploy` (manual only: `/agent-workflow-kit:deploy`) |
@@ -101,10 +108,15 @@ More: [docs/FLOW.md](docs/FLOW.md).
 
 | Agent | Use |
 |---|---|
+| `planner` | Read-only: splits a goal into tasks with file owners, order and an agent-count estimate checked against the limits |
 | `reviewer` | Strict read-only review of a diff against the project's rules and Definition of Done |
 | `explorer` | Read-only "where is X / what depends on Y" mapper on a cheap model |
 | `security-reviewer` | Read-only security review with attack paths |
 | `qa-tester` | Tests a feature like a user and files bugs in `.agents/BUGS.md` |
+| `test-writer` | Writes the failing test first, edge cases and old-flow smoke tests (test files only) |
+| `build-fixer` | Fixes red type-check, build and lint with the smallest change, never by weakening a test |
+| `doc-updater` | Brings feature docs, module map and env examples in line with a finished change (docs only) |
+| `closer` | Runs last: splits the feature into parts, finds what is missing or broken, fixes clear small gaps, asks the human only for real decisions, re-tests, and sends the manager a Closeout report |
 
 ## Hooks
 
@@ -117,6 +129,7 @@ More: [docs/FLOW.md](docs/FLOW.md).
 | `protected-branch` | push to or commit on a protected branch | ask |
 | `destructive-db` | `migrate reset`, `db push`, `DROP`, `TRUNCATE`, `DELETE` without `WHERE`, `FLUSHALL`, `terraform destroy`, and similar | block (configurable to ask) |
 | `protected-files`, `env-files` | edit of a protected glob or an env file | ask |
+| `agent-budget` | Starting a sub-agent (`Agent` tool) | warn near a limit, ask when it would be crossed (parallel, per session, estimated tokens, huge or repeated briefs) |
 | Session start | `.agents/` exists, or right after compaction | short note: work mode, hand-off, unread messages |
 
 Off switches: `AWK_HOOKS=off`, `AWK_DISABLE=<check>,<check>`, plugin options, or `.agents/config.json`. Details: [docs/HOOKS.md](docs/HOOKS.md).
@@ -148,6 +161,32 @@ Skills use the open `SKILL.md` format. `export-skills.js --to agents,codex,curso
 
 Personal plugin options are set when you enable the plugin: `hooks_enabled`, `block_ai_trailers`, `secret_scan`, `destructive_db_guard`, and `reply_style` (`normal`, `caveman-lite`, `caveman-full`). Team settings live in `.agents/config.json`. Reference: [docs/CONFIG.md](docs/CONFIG.md).
 
+## Measured impact
+
+What the kit costs and what it saves, measured on the real files with `npm run stats` (tokens are characters / 4, so estimates):
+
+| Measure | Tokens (est.) |
+|---|---|
+| Always loaded: 36 skill + 9 agent descriptions | ~4.1k |
+| One skill body, loaded only when used (average / largest) | ~0.5k / ~1.0k |
+| `AGENTS.md` index in a new project | ~1.0k |
+| Cold start, index + the largest single context doc | ~1.9k |
+| Cold start, reading all 8 context docs and rules instead | ~4.8k |
+| Cold start saved by reading the index first (worst case) | 61% |
+
+How to read this, honestly:
+- **The kit is not free.** About 4k tokens of skill and agent descriptions sit in every session. It pays for itself when work is long, split across agents, or resumed after a reset.
+- **The index saving is real but small on a fresh project** (template docs are short). It grows with your docs, because an agent opens only the doc its task needs.
+- **Sub-agent and quality effects are not measured here.** Splitting work moves tokens out of the main context (the manager stays small) but total tokens usually go up, not down. Whether output is better depends on the task. The method to measure both on your own work, with real numbers from the session transcripts, is in [docs/BENCHMARK.md](docs/BENCHMARK.md) (`node scripts/session-stats.js --latest`). Results from real runs are welcome as pull requests or issues.
+
+---
+
+## Works on
+
+macOS, Linux and Windows. Everything is plain Node.js 18 or newer with no dependencies, and CI runs the tests on all three systems on Node 18 and 22. Notes for Windows: install Git for Windows (Claude Code uses its Bash for commands), the checkout is forced to LF line endings by `.gitattributes`, and the scripts accept both `C:\path` and Git Bash `/c/path` forms. Skill snippets use `git grep` instead of `grep` so they work without extra tools.
+
+---
+
 ## Worked example
 
 [examples/README.md](examples/README.md) follows a small to-do API from setup through a bug report, intake, regression test, fix, review, state update and hand-off.
@@ -155,13 +194,13 @@ Personal plugin options are set when you enable the plugin: `hooks_enabled`, `bl
 ## Develop and test
 
 ```bash
-node --test tests/*.test.js                       # hook, init, export, git-guard and message-log tests
+npm test                                          # same as: node tests/run.js (works in bash, PowerShell and cmd)
 claude plugin validate . --strict                 # manifest checks
 claude plugin eval . --runs 1 --judge-model sonnet   # behaviour evals (uses model tokens)
 claude --plugin-dir .                             # try it locally
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md](SECURITY.md).
+Contributions are welcome: new skills and agents, hook checks, adapters for more tools, benchmark results. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [code of conduct](CODE_OF_CONDUCT.md). Security reports: [SECURITY.md](SECURITY.md).
 
 ## Credits
 

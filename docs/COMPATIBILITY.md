@@ -19,6 +19,23 @@ The kit has three layers. Only the last is Claude-specific.
 
 Where each tool looks for skills changes between versions. If your tool does not pick up a skill, tell it in its rules file: "procedures live in `.agents/skills/<name>/SKILL.md`; read the matching one before that kind of task" (the Cursor and Copilot adapters already say this).
 
+## Agents for other tools
+
+The kit's agents (`planner`, `explorer`, `reviewer`, `security-reviewer`, `qa-tester`, `test-writer`, `build-fixer`, `doc-updater`, `closer`) are written once in `agents/*.md`. `init` renders them for the tools you select, and `export-agents.js` does the same on its own:
+
+| Tool | File written |
+|---|---|
+| Codex | `.codex/agents/<name>.toml` |
+| Cursor | `.cursor/agents/<name>.md` (read-only agents get `readonly: true`) |
+| Claude Code without the plugin | `.claude/agents/<name>.md` (`--to claude`) |
+
+```bash
+node ../agent-workflow-kit/scripts/export-agents.js --target . --to codex,cursor
+```
+Gemini CLI and Copilot have no agents folder written yet; they use `AGENTS.md` and the exported skills. Agent folder formats change between tool versions, so check yours.
+
+The spawn limits are enforced by a Claude Code hook. Other tools can still run `node .agents/tools/budget.js plan ...` by hand; the `delegate` skill tells them to.
+
 ## Mixed teams
 
 A Claude manager can brief a Codex worker and a Cursor worker. They share the same `AGENTS.md`, the same claims and messages in `.agents/LOG.md`, and the same commit-time guards. Approvals still have to be typed by a human in the session that acts.

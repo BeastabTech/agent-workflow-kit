@@ -11,14 +11,16 @@
  *   msg.js thread --topic "<text>"             every message on one topic
  *   msg.js claims                              active file claims (claim without a later release)
  *   msg.js tail [-n 5]                         last n messages
+ *   msg.js roster [--json]                     every agent seen in the log: last message, open claims, last topic
  *   msg.js where                               print the log path
- * Types: brief, question, answer, claim, release, review-request, review, done, blocked, note, approval-request
+ * Types: brief, question, answer, claim, release, review-request, review, done, blocked, note, approval-request, closeout, instruction
+ *   (instruction = an order from the human, passed on by the manager or typed straight to a worker; it is never an approval)
  */
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
-const TYPES = ['brief', 'question', 'answer', 'claim', 'release', 'review-request', 'review', 'done', 'blocked', 'note', 'approval-request'];
+const TYPES = ['brief', 'question', 'answer', 'claim', 'release', 'review-request', 'review', 'done', 'blocked', 'note', 'approval-request', 'closeout', 'instruction'];
 
 function git(args, cwd) {
   try {
@@ -60,7 +62,7 @@ function parseArgs(argv) {
 }
 
 function parse(text) {
-  const parts = text.split(/^### /m).slice(1);
+  const parts = text.replace(/\r\n/g, '\n').split(/^### /m).slice(1);
   return parts.map((p) => {
     const [head, ...rest] = p.split('\n');
     const m = /^(\S+) · from (.+?) · to (.+?) · (\S+)\s*$/.exec(head.trim()) || [];
@@ -142,6 +144,33 @@ function claims(dir) {
   return [...active.values()];
 }
 
+/** Who is in the team, from the log alone: one row per name, newest activity first. */
+function roster(dir) {
+  const msgs = parse(readLog(dir));
+  const open = claims(dir);
+  const rows = new Map();
+  const touch = (name, m, role) => {
+    const n = String(name).trim();
+    if (!n || /^(all|user)$/i.test(n)) return;
+    const r = rows.get(n) || { name: n, sent: 0, received: 0, last: '', lastType: '', lastTopic: '', claims: 0, done: false };
+    if (role === 'from') {
+      r.sent++;
+      r.last = m.time || r.last;
+      r.lastType = m.type;
+      r.lastTopic = m.topic || '';
+      if (m.type === 'done' || m.type === 'closeout') r.done = true;
+      else if (m.type === 'claim' || m.type === 'brief' || m.type === 'blocked') r.done = false;
+    } else r.received++;
+    rows.set(n, r);
+  };
+  for (const m of msgs) {
+    touch(m.from, m, 'from');
+    for (const to of String(m.to || '').split(/[,\s]+/)) touch(to, m, 'to');
+  }
+  for (const c of open) if (rows.has(c.from)) rows.get(c.from).claims++;
+  return [...rows.values()].sort((a, b) => String(b.last).localeCompare(String(a.last)));
+}
+
 function main() {
   const [cmd, ...rest] = process.argv.slice(2);
   const a = parseArgs(rest);
@@ -157,6 +186,16 @@ function main() {
     case 'thread':
       print(parse(readLog(dir)).filter((m) => m.topic === a.topic || m.re === a.topic));
       break;
+    case 'roster': {
+      const rows = roster(dir);
+      if (a.json) process.stdout.write(JSON.stringify(rows, null, 2) + '\n');
+      else if (!rows.length) process.stdout.write('(none)\n');
+      else {
+        process.stdout.write('| Agent | State | Last message | Topic | Claims | Sent/Recv |\n|---|---|---|---|---|---|\n');
+        for (const r of rows) process.stdout.write(`| ${r.name} | ${r.done ? 'done' : r.lastType === 'blocked' ? 'blocked' : r.sent ? 'active' : 'briefed'} | ${r.last ? r.last.slice(0, 16).replace('T', ' ') + ' ' + r.lastType : '-'} | ${r.lastTopic || '-'} | ${r.claims} | ${r.sent}/${r.received} |\n`);
+      }
+      break;
+    }
     case 'claims':
       print(claims(dir));
       break;
@@ -182,4 +221,4 @@ if (require.main === module) {
     process.exit(1);
   }
 }
-module.exports = { parse, claims, baseDir, TYPES };
+module.exports = { parse, claims, roster, baseDir, TYPES };

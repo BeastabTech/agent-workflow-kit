@@ -6,6 +6,8 @@ All hooks are plain Node.js with no dependencies. They **fail open**: broken inp
 |---|---|---|
 | Bash guard | PreToolUse `Bash` | `scripts/hooks/pre-bash.js` |
 | Edit guard | PreToolUse `Edit`, `Write`, `MultiEdit`, `NotebookEdit` | `scripts/hooks/pre-edit.js` |
+| Spawn budget | PreToolUse `Agent` (also `Task`) | `scripts/hooks/pre-agent.js` |
+| Spawn finished | SubagentStop | `scripts/hooks/subagent-stop.js` |
 | Session note | SessionStart | `scripts/hooks/session-start.js` |
 | Git guard (any tool) | git `pre-commit`, `commit-msg` | `scripts/git-guard.js` (copied to `.agents/tools/`) |
 
@@ -22,6 +24,11 @@ All hooks are plain Node.js with no dependencies. They **fail open**: broken inp
 | `destructive-db` | `prisma migrate reset`, `prisma db push`, `db:reset/push/drop` scripts, `DROP TABLE/DATABASE/SCHEMA`, `TRUNCATE`, `DELETE FROM x` without `WHERE`, `rails db:drop`, django `flush`, `dropDatabase()`, `FLUSHALL`, `dropdb`, ORM schema drop, `knex migrate:rollback --all`, `terraform destroy` | deny (or ask with `"destructiveDb": "ask"`) | no |
 | `protected-files` | edit of a path matching `protectedFiles` | ask | yes |
 | `env-files` | edit of `.env`, `.env.local` and similar (not `.env.example`) | ask | no |
+| `agent-budget` | starting a sub-agent | warn from `warnAtPct` of a limit, a repeated or oversized brief; ask when `maxParallel`, `maxSpawns` or `tokenBudget` would be crossed | no (defaults apply) |
+
+### Spawn budget
+
+Every start of a sub-agent is counted per session in `.agents/.budget/<session>.json` (gitignored). SubagentStop marks one as finished so the parallel count stays right. The token figure is an **estimate** (an assumed size per agent plus brief length / 4) meant for early warning. If you decline a spawn the hook already counted it; the count can only be too high, never too low. Managers check a plan first with `node .agents/tools/budget.js plan --agents 6 --parallel 3` and `budget.js status` shows the session. Turn it off with `AWK_DISABLE=agent-budget`.
 
 Commands that only read (`grep`, `rg`, `git log`, `git show`, `git diff`, `man`) are skipped by the destructive-DB check.
 

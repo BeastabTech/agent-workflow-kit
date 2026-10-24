@@ -7,7 +7,7 @@ const { ROOT } = require('./helpers');
 const { vars, normalise } = require('../scripts/init-project');
 
 function frontmatter(file) {
-  const text = fs.readFileSync(file, 'utf8');
+  const text = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
   const m = /^---\n([\s\S]*?)\n---\n/.exec(text);
   assert.ok(m, `${file}: missing frontmatter`);
   const out = {};
@@ -46,7 +46,7 @@ test('every agent has name, description and a tools list; read-only agents canno
     const { meta } = frontmatter(path.join(ROOT, 'agents', file));
     assert.equal(meta.name, file.replace(/\.md$/, ''));
     assert.ok(meta.description && meta.tools, `agents/${file}: description and tools required`);
-    if (['reviewer', 'explorer', 'security-reviewer'].includes(meta.name)) {
+    if (['reviewer', 'explorer', 'security-reviewer', 'planner'].includes(meta.name)) {
       assert.doesNotMatch(meta.tools, /\b(Write|Edit)\b/, `${meta.name} must be read-only`);
     }
   }
@@ -87,4 +87,28 @@ test('the web smoke script parses and explains a missing Playwright', () => {
   const os = require('os');
   const r = spawnSync('node', [script, 'http://localhost:1'], { cwd: os.tmpdir(), encoding: 'utf8', env: { ...process.env, NODE_PATH: '' } });
   if (r.status === 2) assert.match(r.stderr, /Playwright not found/);
+});
+
+test('README numbers match the repo (skills, agents, measured table)', () => {
+  const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
+  const { measure } = require('../scripts/stats');
+  const m = measure();
+  assert.ok(readme.includes(`${m.skills} skill + ${m.agents} agent descriptions | ~${(m.alwaysOnTokens / 1000).toFixed(1)}k`), 'always-loaded row is stale: run npm run stats and update the README');
+  assert.ok(readme.includes(`reading all ${m.contextDocs} context docs`), 'context doc count is stale');
+  assert.ok(readme.includes(`| ~${(m.coldStartWithIndex / 1000).toFixed(1)}k |`), 'cold start row is stale');
+  for (const name of fs.readdirSync(path.join(ROOT, 'skills'))) assert.ok(readme.includes(`\`${name}\``), `README does not list skill ${name}`);
+  for (const f of fs.readdirSync(path.join(ROOT, 'agents'))) assert.ok(readme.includes(`\`${f.replace(/\.md$/, '')}\``), `README does not list agent ${f}`);
+});
+
+test('nothing personal: no emails, home paths or private hostnames in tracked text', () => {
+  const { execFileSync } = require('child_process');
+  const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: ROOT, encoding: 'utf8' }).split('\n').filter((f) => f && /\.(md|js|mjs|json|toml|mdc|yml|html|gitignore)$/.test(f) && fs.existsSync(path.join(ROOT, f)));
+  const email = /[\w.+-]+@(?!example\.(com|org)|users\.noreply\.github\.com)[\w-]+\.[a-z]{2,}/i;
+  const home = /(\/Users\/[a-z]|\/home\/[a-z]|C:\\Users\\)/i;
+  for (const f of files) {
+    const text = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    assert.doesNotMatch(text, home, `${f}: home directory path`);
+    const m = email.exec(text);
+    assert.ok(!m || /noreply@|@anthropic|ci@|dev@|a@b\.c/.test(m[0]) || f === 'tests/lint.test.js', `${f}: email ${m && m[0]}`);
+  }
 });

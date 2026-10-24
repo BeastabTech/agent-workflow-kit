@@ -13,7 +13,7 @@ Follow every step and report honestly which ones ran.
 1. **Read context:** `AGENTS.md`, the area's feature file, the owner in `docs/context/MODULE_MAP.md`, `.claude/rules/never-break.md`.
 2. **Impact search** for every function, route, field, enum value, event, queue, env var or file you touch:
    ```bash
-   grep -rn "<symbol>" <source dirs>
+   git grep -n --untracked "<symbol>" -- <source dirs>
    ```
    Contracts used by other services or apps: search those repos too, or ask their owner.
 3. **Protected files** (`protectedFiles` in `.agents/config.json`): stop, show the owner the exact diff, wait for their OK.

@@ -4,6 +4,7 @@
  * PreToolUse guard for Edit / Write / MultiEdit / NotebookEdit.
  * Checks: protected-files (asks), env-files (asks), secret-scan on new content (blocks clear secrets).
  */
+const fs = require('fs');
 const path = require('path');
 const { loadConfig, enabled } = require('../lib/config');
 const { matchesAny } = require('../lib/glob');
@@ -18,6 +19,20 @@ function newContent(ti) {
   return '';
 }
 
+/** git reports the real root (/private/var), the tool may pass a symlinked path (/var): compare real paths. */
+function realPath(p) {
+  const real = fs.realpathSync.native || fs.realpathSync;
+  try {
+    return real(p);
+  } catch (_) {
+    try {
+      return path.join(real(path.dirname(p)), path.basename(p));
+    } catch (_) {
+      return p;
+    }
+  }
+}
+
 function main() {
   const input = readInput();
   const ti = input.tool_input || {};
@@ -26,8 +41,8 @@ function main() {
   const cwd = input.cwd || process.cwd();
   const cfg = loadConfig(cwd);
   if (cfg.hooksOff) process.exit(0);
-  const abs = path.resolve(cwd, target);
-  const rel = path.relative(cfg.root, abs).split(path.sep).join('/');
+  const abs = realPath(path.resolve(cwd, target));
+  const rel = path.relative(realPath(cfg.root), abs).split(path.sep).join('/');
   const inside = rel && !rel.startsWith('..');
   const findings = [];
 

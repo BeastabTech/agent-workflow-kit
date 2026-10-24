@@ -22,6 +22,7 @@ const DEFAULTS = {
   destructiveDb: 'deny',
   secretScan: { allowPaths: [] },
   commands: {},
+  limits: {},
 };
 
 function git(args, cwd) {

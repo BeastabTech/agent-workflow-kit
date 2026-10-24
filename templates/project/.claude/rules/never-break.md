@@ -3,7 +3,7 @@
 Users and other services depend on current behaviour. Every change keeps it.
 
 ## Before you change anything
-- Find every caller of what you touch (`grep -rn` for the function, route, field, event, enum value or env var). For cross-service contracts, check the sibling repos too.
+- Find every caller of what you touch (`git grep -n` for the function, route, field, event, enum value or env var). For cross-service contracts, check the sibling repos too.
 - Read the area's feature file in `docs/context/features/` (later sections override earlier ones).
 
 ## Hard rules

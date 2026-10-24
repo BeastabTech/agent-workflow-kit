@@ -98,3 +98,13 @@ test('message log: post, inbox, claims, shared across worktrees', () => {
   msg(wt, 'post', '--from', 'api', '--to', 'all', '--type', 'release', '--topic', 'login', '--body', 'done');
   assert.doesNotMatch(msg(dir, 'claims'), /src\/login\.js/);
 });
+
+test('closeout: agent, skill and report template exist and the closeout message type posts', () => {
+  for (const f of ['agents/closer.md', 'skills/closeout/SKILL.md', 'skills/closeout/templates/closeout-report.md']) {
+    assert.ok(fs.existsSync(path.join(ROOT, f)), f);
+  }
+  const { dir } = tmpRepo();
+  const r = spawnSync('node', [path.join(ROOT, 'scripts', 'agent-msg.js'), 'post', '--from', 'closer', '--to', 'manager', '--type', 'closeout', '--topic', 'feat', '--body', 'ready'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /closeout/);
+});

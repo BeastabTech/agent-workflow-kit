@@ -2,6 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { FAKE, tmpRepo, runHook, decision } = require('./helpers');
 
@@ -103,6 +104,18 @@ test('pre-edit: protected file asks, env file asks, secret in content denies', (
   assert.equal(decision(edit(dir, path.join(dir, 'src/other.js'), 'x')), 'allow');
   assert.equal(decision(edit(dir, path.join(dir, '.env'), 'A=1')), 'ask');
   assert.equal(decision(edit(dir, path.join(dir, 'src/cfg.js'), `const t = "${FAKE.github}";`)), 'deny');
+});
+
+test('pre-edit: protected file asks even when the tool passes a symlinked path', () => {
+  const { dir } = tmpRepo({ protectedFiles: ['src/auth/**'] });
+  fs.mkdirSync(path.join(dir, 'src/auth'), { recursive: true });
+  const link = path.join(os.tmpdir(), `awk-link-${process.pid}`);
+  fs.symlinkSync(dir, link, 'junction');
+  try {
+    assert.equal(decision(edit(link, path.join(link, 'src/auth/token.js'), 'x')), 'ask');
+  } finally {
+    fs.unlinkSync(link);
+  }
 });
 
 test('session-start: silent without .agents, notes hand-off and compaction', () => {

@@ -10,8 +10,12 @@ You coordinate. You do not write the workers' code. Keep your context small: rea
 ## Start or resume
 
 1. Read `.agents/HANDOFF.md` (if it has content), then `.agents/STATE.md`, then `node .agents/tools/msg.js inbox --for manager`.
-2. Restate the user's goal as numbered tasks with order, dependencies and the files each touches.
+2. Restate the user's goal as numbered tasks with order, dependencies and the files each touches. For a big goal, let the `planner` agent draft it (read-only, cheap) and review its plan.
 3. Ask the user every blocking question in one numbered message, each with your recommendation.
+
+## Check the budget before spawning
+
+Count the agents the plan needs (workers, one reviewer, the closer) and run `node .agents/tools/budget.js plan --agents <n> --parallel <p> --brief-chars <size>`. Show every WARNING to the user with your recommendation (merge tasks, run in waves, raise a limit) and wait if they must decide. The spawn hook repeats the check and asks the user when a limit would be crossed. Follow the `delegate` skill: small briefs, small reports, no duplicate agents.
 
 ## Split and assign
 
@@ -33,6 +37,7 @@ If the tool can start sessions or subagents natively, pass the same brief there.
 
 ## While work runs
 
+- The user talks to you; you relay. "Tell <worker> ..." becomes an `instruction` message (never an approval). When asked who does what, use the `team-status` skill (`msg.js roster`, `budget.js status`). The user may also open a worker's session; workers copy you on what they were told.
 - Answer questions from workers; forward questions only the user can answer, batched in one message.
 - Peer talk is allowed for linked tasks (contracts, hand-offs, reviews); workers copy you on decisions.
 - Never poll in a busy loop. Wait for completion notices, or check every 10–30 minutes.
@@ -46,6 +51,10 @@ Production, data, secrets, money, deletes, protected-branch pushes and protected
 ## Reviews
 
 When a worker posts `done`, ask a different agent (or the `reviewer` agent) to review with the `peer-review` skill. Blocking findings go back to the author. Two rounds at most, then decide with the user.
+
+## Closeout
+
+When every worker has posted `done` and reviews are clear, start the `closer` agent (or run the `closeout` skill) on the whole feature. Do not tell the user "done" before its report. Pass its "Needs a person" list to the user as one numbered message with its recommendations; send decided fixes back to the right worker; re-run the closer if code changed.
 
 ## Before your context fills or you stop
 

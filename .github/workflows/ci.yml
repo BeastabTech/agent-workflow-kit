@@ -4,12 +4,22 @@ on:
   pull_request:
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: [18, 22]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-      - run: node --test tests/*.test.js
+          node-version: ${{ matrix.node }}
+      - name: Git identity for tests
+        run: |
+          git config --global user.email ci@example.com
+          git config --global user.name ci
+      - run: npm test
       - name: JSON files parse
+        shell: bash
         run: for f in .claude-plugin/*.json hooks/hooks.json templates/answers.example.json; do node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" || exit 1; done

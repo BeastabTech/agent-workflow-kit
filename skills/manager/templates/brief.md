@@ -16,4 +16,4 @@
 
 **Ask first:** send all blocking questions in one numbered message with your recommendation, to `manager`. Approvals for <risky actions> must come from the human typed in your session.
 
-**Report:** `node .agents/tools/msg.js post --from <you> --to manager --type done --topic "<task name>"` with the Done report as the body. Then stop.
+**Report:** `node .agents/tools/msg.js post --from <you> --to manager --type done --topic "<task name>"` with the Done report as the body. Then stop. List anything you left undone or unsure about under "Open items" so the closer can find it.

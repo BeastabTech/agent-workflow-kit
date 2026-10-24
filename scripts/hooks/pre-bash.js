@@ -49,9 +49,14 @@ function tokens(seg) {
   return (seg.match(/"[^"]*"|'[^']*'|\S+/g) || []).map((t) => t.replace(/^["']|["']$/g, ''));
 }
 
+/** Git Bash writes C:\\x as /c/x; node on Windows needs the drive form. */
+function nativePath(p) {
+  return process.platform === 'win32' ? p.replace(/^\/([a-zA-Z])(?=\/|$)/, '$1:') : p;
+}
+
 function gitCwd(seg, cwd) {
   const m = /\bgit\s+-C\s+("[^"]+"|'[^']+'|\S+)/.exec(seg);
-  return m ? path.resolve(cwd, m[1].replace(/^["']|["']$/g, '')) : cwd;
+  return m ? path.resolve(cwd, nativePath(m[1].replace(/^["']|["']$/g, ''))) : cwd;
 }
 
 function checkTrailers(cmd, cwd) {
