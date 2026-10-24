@@ -1,11 +1,20 @@
 ---
 name: delegate
-description: Decide whether to hand work to a sub-agent, and do it with the least context and cost - when to delegate, which agent and model, how small the brief and the returned report should be, how many at once, and how to check the plan against the spawn limits before starting. Use before spawning any sub-agent or worker, when a task needs wide searching or many file reads, when asked to run things in parallel, or when the session is using too many agents or too much context.
+description: Decide whether to hand work to a sub-agent, and do it with the least context and cost - when to delegate, which agent and model, how small the brief and the returned report should be, and how to size the plan and check it against the spawn limits, telling the user, before starting anything. Use before spawning any sub-agent or worker, when a task needs wide searching or many file reads, when asked to run things in parallel, or when the session is using too many agents or too much context.
 ---
 
 # Delegate with a small footprint
 
 A sub-agent has its own context window. What you gain: your context stays small. What it costs: its tokens, plus whatever you paste into the brief and read back. Delegate when the gain is bigger than the cost.
+
+## First: size the plan and check it against the limits
+
+Before you spawn anything, write down how many agents the plan needs (workers, one reviewer, the `closer`) and how many run at once, then check it:
+```bash
+node .agents/tools/budget.js plan --agents <n> --parallel <p> --brief-chars <typical>
+node .agents/tools/budget.js status        # during the work
+```
+Defaults: 4 at once, 10 per session (`limits` in `.agents/config.json`). If there is no budget tool in this project, apply those numbers yourself. **Tell the user the count and any WARNING before you start**, with your recommendation (merge tasks, run in waves, raise a limit), and wait if they must decide. The PreToolUse hook repeats the check on every spawn and asks the human when a limit would be crossed. The numbers are estimates for early warning, not a bill.
 
 ## Delegate when
 - The task needs many reads or searches and you only need the conclusion (`explorer`).
@@ -30,15 +39,7 @@ A sub-agent has its own context window. What you gain: your context stays small.
 ## Get small results back
 Ask for a conclusion with `file:line` pointers, not file contents. Read only the report. If it is long, ask for a shorter one rather than reading it all.
 
-## Check the plan before you start
-```bash
-node .agents/tools/budget.js plan --agents <n> --parallel <p> --brief-chars <typical>
-node .agents/tools/budget.js status        # during the work
-```
-If it prints WARNING lines, show them to the user with your recommendation (merge tasks, run in waves, raise a limit) **before** spawning. The PreToolUse hook repeats the check on every spawn and asks the human when a limit would be crossed. Limits live in `limits` in `.agents/config.json`.
-
 ## Rules
 - Never start a second agent for work an earlier one already returned; use its result.
 - Reserve slots for the reviewer and the `closer`.
 - Parallel agents never share files. Check `msg.js claims`.
-- Token numbers from the checker are estimates for early warning, not a bill.
