@@ -1,6 +1,6 @@
 ---
 name: responsive-ui
-description: Make web pages and apps work well on every screen - phones, tablets, laptops, large screens, portrait and landscape, touch and mouse - with mobile-first CSS, fluid type and spacing, flexible grids, container queries, responsive images, safe areas and input-friendly forms. Also covers React Native / Flutter / PWA layout. Use when building or fixing any layout, when something breaks on mobile, or when asked for a responsive site or app.
+description: Make web pages and apps work on every screen with mobile-first CSS, fluid type, flexible grids, container queries, responsive images and touch-friendly forms; also React Native, Flutter and PWA layout. Use when building or fixing layout, when something breaks on mobile, or when asked for a responsive site.
 ---
 
 # Responsive web and app UI

@@ -108,3 +108,40 @@ test('closeout: agent, skill and report template exist and the closeout message 
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /closeout/);
 });
+
+test('presets: init writes the edition, compact editions skip the context pack, config follows the preset', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const { tmpRepo, runHook, ROOT } = require('./helpers');
+  const { init } = require('../scripts/init-project');
+  const presets = require('../scripts/lib/presets');
+  assert.deepEqual(presets.NAMES.sort(), ['auto', 'best', 'lite', 'low-tokens', 'normal']);
+  const lite = tmpRepo().dir;
+  const r = init({ target: lite, preset: 'lite', tools: 'claude' });
+  assert.equal(r.preset, 'lite');
+  assert.ok(!fs.existsSync(path.join(lite, 'docs', 'context')));
+  assert.ok(!fs.existsSync(path.join(lite, '.claude', 'rules')));
+  assert.ok(fs.existsSync(path.join(lite, '.agents', 'skills', 'self-review', 'SKILL.md')));
+  assert.ok(fs.statSync(path.join(lite, 'AGENTS.md')).size < 2000);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(lite, '.agents', 'config.json'), 'utf8')).preset, 'lite');
+  const best = tmpRepo().dir;
+  init({ target: best, preset: 'best', tools: 'claude' });
+  assert.ok(fs.existsSync(path.join(best, 'docs', 'context', 'SELF_REVIEW.md')));
+  const { loadConfig } = require('../scripts/lib/config');
+  const cfg = loadConfig(best);
+  assert.equal(cfg.preset, 'best');
+  assert.equal(cfg.profile, 'strict');
+  assert.equal(loadConfig(lite).profile, 'minimal');
+  const prev = process.env.AWK_PRESET;
+  process.env.AWK_PRESET = 'low-tokens';
+  try {
+    const c = loadConfig(best);
+    assert.equal(c.preset, 'low-tokens');
+    assert.equal(c.personal.replyStyle, 'caveman-lite');
+  } finally {
+    if (prev === undefined) delete process.env.AWK_PRESET;
+    else process.env.AWK_PRESET = prev;
+  }
+  const out = runHook('session-start', { cwd: best, source: 'startup' }, { AWK_PRESET: 'best' });
+  assert.match(out.stdout || out, /Preset best/);
+});

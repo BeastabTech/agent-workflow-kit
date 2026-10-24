@@ -1,7 +1,7 @@
 {
   "name": "agent-workflow-kit",
   "displayName": "Agent Workflow Kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A team workflow for coding agents: short project memory, rules, safe-change and self-review checklists, manager/worker orchestration with a state owner, agent-to-agent messaging, hand-off and resume, bug intake, team hand-off messages, cloud ops, and safety hooks.",
   "author": {
     "name": "BeastabTech",
@@ -23,6 +23,12 @@
     "tdd"
   ],
   "userConfig": {
+    "preset": {
+      "type": "string",
+      "title": "Edition: auto, lite, low-tokens, normal or best",
+      "description": "auto = the kit sizes each task and decides. lite = safety net only, least overhead. low-tokens = cheapest sessions, short replies, no sub-agents unless needed. normal = balanced (default). best = highest quality, strict hooks, tests and independent review, spends more tokens.",
+      "default": "normal"
+    },
     "hooks_enabled": {
       "type": "boolean",
       "title": "Enable safety hooks",
@@ -50,14 +56,14 @@
     "reply_style": {
       "type": "string",
       "title": "Reply style",
-      "description": "Personal reply style for every session: normal, caveman-lite or caveman-full.",
-      "default": "normal"
+      "description": "Personal reply style: auto (follow the edition), normal, caveman-lite or caveman-full.",
+      "default": "auto"
     },
     "profile": {
       "type": "string",
       "title": "Hook profile",
-      "description": "minimal (only clear safety nets), standard (default) or strict (warnings and soft asks become stops).",
-      "default": "standard"
+      "description": "auto (follow the edition), minimal (only clear safety nets), standard or strict (warnings and soft asks become stops).",
+      "default": "auto"
     }
   }
 }

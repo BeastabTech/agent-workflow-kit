@@ -1,7 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
+- `auto` edition and `budget.js triage --task "<request>"`: the kit estimates files, reads, parts and risk from the task text and the repo, then decides mode, model tier, agents and review.
+- Loops: `loop` skill and `loop.js` (`start`, `check`, `step`, `status`, `stop`) with a round limit, a stuck detector and a clear DONE, CONTINUE or STOP verdict; `/loop` for recurring and watch jobs.
+- Measured editions on one coding task: `docs/benchmarks/presets-coupons.md`.
+- Editions (`lite`, `low-tokens`, `normal`, `best`), chosen at install: plugin option `preset`, `init --preset` (asks in a terminal), first question of the `init` skill, `preset` in `.agents/config.json`, `AWK_PRESET`. Each sets hook profile, spawn limits, reply style and a session note; `lite` and `low-tokens` install a compact `AGENTS.md`, export only core skills and add git hooks. `docs/EDITIONS.md`.
+- `budget.js triage`: size the problem first (files, reads, parts, risk), then get mode, model tier, agent count and review; the manager and delegate skills start with it.
+- `scripts/bench-presets.js` and a coupon fixture with hidden tests to compare editions against no kit.
+- Less spend by default: the `manager` skill now starts with a triage (solo, one sub-agent, or several; risky code gets a reviewer), `delegate` defaults to solo, a hook warns when an `explorer` starts in a repo under `limits.smallRepoFiles` (400) tracked files, and 12 long skill and agent descriptions were shortened (always-loaded cost ~4.2k to ~3.8k tokens).
+- Repo hygiene: tests for broken markdown links and version sync between `package.json` and `plugin.json`, `.editorconfig`, Dependabot for GitHub Actions, `repository` in `package.json`.
 - Hook profiles `minimal` / `standard` / `strict` (`AWK_PROFILE`, plugin option `profile`, `profile` in `.agents/config.json`).
 - `lessons` skill: record non-obvious causes in the right doc, without duplicates, and promote to a rule only when it recurs.
 - Measured results in the README: a delegation micro-benchmark (the sub-agent cost about 6.7 times the tokens on a small search, no main-context saving), plugin eval results, and the always-loaded cost. `scripts/bench-delegation.js` reruns it; raw data in `docs/benchmarks/`. The `delegate` skill now tells agents to do `git grep`-sized searches themselves.

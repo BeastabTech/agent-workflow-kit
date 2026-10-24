@@ -4,6 +4,7 @@
 
 | Key | Default | Meaning |
 |---|---|---|
+| `preset` | `normal` | Edition: `lite`, `low-tokens`, `normal` or `best` (see [EDITIONS.md](EDITIONS.md)); sets default profile, limits and reply style |
 | `workMode` | `shared` | `shared` or `worktree` (see [MODES.md](MODES.md)) |
 | `stateSync` | `git` | `git`, `folder` or `local` |
 | `sharedDir` | `null` | Folder for state and messages when `stateSync` is `folder` |
@@ -21,6 +22,9 @@
 | `limits.assumedAgentTokens` | `30000` | Rough tokens one sub-agent run costs (for the estimate) |
 | `limits.tokenBudget` | `0` | Estimated tokens for all sub-agents; `0` means no limit |
 | `limits.maxPromptChars` | `6000` | Brief size that triggers a "point to files instead" warning |
+| `limits.maxLoopRounds` | `8` | Rounds of one loop before it must stop (`loop.js`) |
+| `limits.stuckRepeats` | `2` | The same failure this many rounds in a row ends a loop |
+| `limits.smallRepoFiles` | `400` | Starting an `explorer` in a repo with fewer tracked files warns (asks in `strict`); `0` turns it off |
 | `limits.maxFixRounds` | `2` | Fix rounds for the closer and reviewers (rule text only) |
 | `profile` | `standard` | `minimal`, `standard` or `strict` (see below) |
 | `tools` | all | Which agent adapters `init` wrote |

@@ -1,6 +1,6 @@
 ---
 name: lessons
-description: Turn a bug, incident, failed review or surprising behaviour into a short lasting lesson in the project's docs - the trap, how to spot it, the fix - in the right file, without duplicates or secrets, and propose a team rule only when it keeps recurring. Use after a non-obvious bug is fixed, when a reviewer or the closer finds the same mistake twice, when something cost a lot of time, or when asked to remember, record or learn from what happened.
+description: Turn a bug, incident or failed review into a short lasting lesson in the project docs (trap, how to spot it, fix) without duplicates or secrets; propose a rule only if it recurs. Use after a non-obvious bug is fixed, when the same mistake appears twice, or when asked to record or learn from what happened.
 ---
 
 # Lessons

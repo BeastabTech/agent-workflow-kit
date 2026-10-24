@@ -12,6 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const { DEFAULT_LIMITS } = require('./lib/budget');
 const { renderFor } = require('./lib/agents');
+const presets = require('./lib/presets');
 
 const KIT = path.resolve(__dirname, '..');
 const TEMPLATES = path.join(KIT, 'templates', 'project');
@@ -76,6 +77,7 @@ function normalise(raw) {
     sourceDirs: a.sourceDirs || 'src',
     tools: list(a.tools, TOOLS).filter((t) => TOOLS.includes(t)),
     gitHooks: Boolean(a.gitHooks),
+    preset: presets.pick(a.preset) || presets.DEFAULT_PRESET,
   };
 }
 
@@ -115,6 +117,8 @@ function vars(n) {
         ? 'Agents may commit finished, verified work on a non-protected branch. Pushing needs a human request.'
         : 'Agents commit or push only when a human asks in that session.',
     SOURCE_DIRS: n.sourceDirs,
+    PRESET: n.preset,
+    PROTECTED_FILES_INLINE: n.protectedFiles.length ? n.protectedFiles.map((f) => `\`${f}\``).join(', ') : 'none listed (add globs to `protectedFiles` in `.agents/config.json`)',
     DATE: new Date().toISOString().slice(0, 10),
   };
 }
@@ -175,6 +179,7 @@ function init(opts) {
   const target = path.resolve(opts.target || '.');
   const raw = opts.answers ? JSON.parse(fs.readFileSync(path.resolve(opts.answers), 'utf8')) : {};
   raw.target = target;
+  if (opts.preset) raw.preset = opts.preset;
   const n = normalise(raw);
   const v = vars(n);
   const dry = Boolean(opts['dry-run']);
@@ -187,16 +192,28 @@ function init(opts) {
     const dir = path.join(ADAPTERS, tool);
     if (fs.existsSync(dir)) sources.push(...walk(dir).map((rel) => [path.join(dir, rel), rel]));
   }
+  const edition = presets.get(n.preset);
+  const COMPACT_SKIP = /^(docs\/context\/|\.claude\/rules\/|\.agents\/BUGS\.md$)/;
+  if (edition.compact) {
+    for (let i = sources.length - 1; i >= 0; i--) if (COMPACT_SKIP.test(sources[i][1])) sources.splice(i, 1);
+    const at = sources.findIndex(([, rel]) => rel === 'AGENTS.md');
+    if (at !== -1) sources[at] = [path.join(KIT, 'templates', 'presets', 'AGENTS.compact.md'), 'AGENTS.md'];
+    n.gitHooks = true;
+  }
   if (opts['with-optional']) sources.push(...walk(OPTIONAL).map((rel) => [path.join(OPTIONAL, rel), rel]));
   sources.push([path.join(KIT, 'scripts', 'agent-msg.js'), '.agents/tools/msg.js']);
   sources.push([path.join(KIT, 'scripts', 'agent-budget.js'), '.agents/tools/budget.js']);
+  sources.push([path.join(KIT, 'scripts', 'agent-loop.js'), '.agents/tools/loop.js']);
+  sources.push([path.join(KIT, 'scripts', 'lib', 'triage-auto.js'), '.agents/tools/lib/triage-auto.js']);
   sources.push([path.join(KIT, 'scripts', 'lib', 'config.js'), '.agents/tools/lib/config.js']);
   sources.push([path.join(KIT, 'scripts', 'lib', 'budget.js'), '.agents/tools/lib/budget.js']);
+  sources.push([path.join(KIT, 'scripts', 'lib', 'presets.js'), '.agents/tools/lib/presets.js']);
   if (n.gitHooks) {
     sources.push([path.join(KIT, 'scripts', 'git-guard.js'), '.agents/tools/git-guard.js']);
     sources.push([path.join(KIT, 'scripts', 'lib', 'secrets.js'), '.agents/tools/lib/secrets.js']);
   }
 
+  const COMPACT_POINTER = ['# Agent instructions', '', '`AGENTS.md` has the rules for this project.', '', '@AGENTS.md', ''].join('\n');
   const links = [];
   for (const [, rel] of sources) {
     const out = rel.replace(/\.tmpl$/, '');
@@ -223,14 +240,15 @@ function init(opts) {
     }
     if (!dry) {
       fs.mkdirSync(path.dirname(dest), { recursive: true });
-      const text = render(fs.readFileSync(src, 'utf8'), v);
+      let text = render(fs.readFileSync(src, 'utf8'), v);
+      if (edition.compact && /(^|\/)(CLAUDE|GEMINI)\.md$|copilot-instructions\.md$|agent-workflow\.mdc$/.test(relOut)) text = relOut.endsWith('.mdc') ? '---\ndescription: Project rules\nalwaysApply: true\n---\n\nRead `AGENTS.md` first; its rules apply to every change.\n' : COMPACT_POINTER;
       fs.writeFileSync(dest, /\.(md|mdc|toml)$/.test(dest) ? relink(text) : text);
     }
     report.written.push(relOut);
   }
 
   // Agent definitions for tools that have an agents folder, generated from agents/*.md.
-  for (const { rel, text } of renderFor(n.tools.filter((t) => t !== 'claude'))) {
+  for (const { rel, text } of edition.compact ? [] : renderFor(n.tools.filter((t) => t !== 'claude'))) {
     const dest = path.join(target, rel);
     if (fs.existsSync(dest) && !opts.force) {
       report.kept.push(rel);
@@ -272,7 +290,8 @@ function init(opts) {
     destructiveDb: 'deny',
     secretScan: { allowPaths: [] },
     commands: n.commands,
-    limits: DEFAULT_LIMITS,
+    preset: n.preset,
+    limits: { ...DEFAULT_LIMITS, ...edition.limits },
     timezone: n.timezone,
     tools: n.tools,
   };
@@ -285,8 +304,19 @@ function init(opts) {
     }
     report.written.push('.agents/config.json');
   }
+  report.preset = n.preset;
+  if (edition.compact && edition.skills) {
+    const { exportSkills } = require('./export-skills');
+    const to = ['agents'].concat(n.tools.includes('claude') ? ['claude'] : []).join(',');
+    if (!dry) {
+      const ex = exportSkills({ target, to, skills: edition.skills.join(',') });
+      report.written.push(...ex.written);
+      report.kept.push(...ex.kept);
+    } else report.written.push(...edition.skills.map((sk) => `.agents/skills/${sk}`));
+    report.next = (report.next || []).concat(['This edition uses the exported skills and git hooks instead of the plugin: do not enable the plugin for the lowest always-loaded cost (the plugin lists every skill, about 3.8k tokens).']);
+  }
 
-  const ignore = ['.agents/LOG.md', '.agents/.read/', '.agents/.budget/'];
+  const ignore = ['.agents/LOG.md', '.agents/.read/', '.agents/.budget/', '.agents/.loops/'];
   if (n.stateSync !== 'git') ignore.push('.agents/STATE.md', '.agents/HANDOFF.md', '.agents/BUGS.md');
   report.gitignore = ensureGitignore(target, ignore, dry);
   return report;
@@ -295,11 +325,21 @@ function init(opts) {
 if (require.main === module) {
   const opts = args(process.argv.slice(2));
   if (opts.help || !opts.target) {
-    process.stdout.write('Usage: node init-project.js --target <dir> [--answers answers.json] [--tools claude,codex,cursor,gemini,copilot] [--with-git-hooks] [--with-optional] [--force] [--dry-run]\n');
+    process.stdout.write('Usage: node init-project.js --target <dir> [--answers answers.json] [--tools claude,codex,cursor,gemini,copilot] [--preset lite|low-tokens|normal|best] [--with-git-hooks] [--with-optional] [--force] [--dry-run]\n');
     process.exit(opts.help ? 0 : 1);
   }
-  const r = init(opts);
-  process.stdout.write(JSON.stringify(r, null, 2) + '\n');
+  const finish = (o) => process.stdout.write(JSON.stringify(init(o), null, 2) + '\n');
+  if (!opts.preset && !opts.answers && process.stdin.isTTY && process.stdout.isTTY) {
+    // Install-time question: which edition?
+    const rl = require('readline').createInterface({ input: process.stdin, output: process.stderr });
+    const names = presets.NAMES;
+    process.stderr.write('\nWhich edition?\n' + names.map((k, i) => `  ${i + 1}) ${k}${k === presets.DEFAULT_PRESET ? ' (default)' : ''}: ${presets.PRESETS[k].pitch}`).join('\n') + '\n');
+    rl.question('Choose 1-' + names.length + ' [' + (names.indexOf(presets.DEFAULT_PRESET) + 1) + ']: ', (ans) => {
+      rl.close();
+      opts.preset = names[Number(ans) - 1] || presets.pick(ans) || presets.DEFAULT_PRESET;
+      finish(opts);
+    });
+  } else finish(opts);
 }
 
 module.exports = { init, normalise, vars, render, TOOLS };

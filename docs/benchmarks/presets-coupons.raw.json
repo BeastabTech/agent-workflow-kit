@@ -1,0 +1,234 @@
+{
+  "task": "coupons",
+  "model": "sonnet",
+  "runs": 3,
+  "rows": [
+    {
+      "run": 1,
+      "arm": "none",
+      "secs": 33,
+      "cost": 0.121,
+      "hidden": 7,
+      "ownTests": 6,
+      "freshTotal": 27359,
+      "peak": 33590,
+      "subagents": 0,
+      "turns": 10
+    },
+    {
+      "run": 1,
+      "arm": "lite",
+      "secs": 55,
+      "cost": 0.165,
+      "hidden": 7,
+      "ownTests": 5,
+      "freshTotal": 33194,
+      "peak": 36440,
+      "subagents": 0,
+      "turns": 11
+    },
+    {
+      "run": 1,
+      "arm": "low-tokens",
+      "secs": 46,
+      "cost": 0.152,
+      "hidden": 7,
+      "ownTests": 6,
+      "freshTotal": 31848,
+      "peak": 36440,
+      "subagents": 0,
+      "turns": 11
+    },
+    {
+      "run": 1,
+      "arm": "normal",
+      "secs": 33,
+      "cost": 0.127,
+      "hidden": 7,
+      "ownTests": 7,
+      "freshTotal": 31054,
+      "peak": 39356,
+      "subagents": 0,
+      "turns": 11
+    },
+    {
+      "run": 1,
+      "arm": "best",
+      "secs": 40,
+      "cost": 0.156,
+      "hidden": 7,
+      "ownTests": 16,
+      "freshTotal": 36943,
+      "peak": 43463,
+      "subagents": 0,
+      "turns": 8
+    },
+    {
+      "run": 2,
+      "arm": "none",
+      "secs": 34,
+      "cost": 0.11,
+      "hidden": 6,
+      "ownTests": 2,
+      "freshTotal": 24427,
+      "peak": 31128,
+      "subagents": 0,
+      "turns": 9
+    },
+    {
+      "run": 2,
+      "arm": "lite",
+      "secs": 34,
+      "cost": 0.121,
+      "hidden": 7,
+      "ownTests": 7,
+      "freshTotal": 27834,
+      "peak": 33803,
+      "subagents": 0,
+      "turns": 8
+    },
+    {
+      "run": 2,
+      "arm": "low-tokens",
+      "secs": 35,
+      "cost": 0.122,
+      "hidden": 6,
+      "ownTests": 6,
+      "freshTotal": 27841,
+      "peak": 34115,
+      "subagents": 0,
+      "turns": 8
+    },
+    {
+      "run": 2,
+      "arm": "normal",
+      "secs": 45,
+      "cost": 0.157,
+      "hidden": 7,
+      "ownTests": 6,
+      "freshTotal": 36388,
+      "peak": 43139,
+      "subagents": 0,
+      "turns": 11
+    },
+    {
+      "run": 2,
+      "arm": "best",
+      "secs": 46,
+      "cost": 0.174,
+      "hidden": 7,
+      "ownTests": 10,
+      "freshTotal": 39601,
+      "peak": 45250,
+      "subagents": 0,
+      "turns": 10
+    },
+    {
+      "run": 3,
+      "arm": "none",
+      "secs": 38,
+      "cost": 0.115,
+      "hidden": 6,
+      "ownTests": 5,
+      "freshTotal": 25559,
+      "peak": 31864,
+      "subagents": 0,
+      "turns": 10
+    },
+    {
+      "run": 3,
+      "arm": "lite",
+      "secs": 47,
+      "cost": 0.154,
+      "hidden": 6,
+      "ownTests": 6,
+      "freshTotal": 32544,
+      "peak": 37127,
+      "subagents": 0,
+      "turns": 10
+    },
+    {
+      "run": 3,
+      "arm": "low-tokens",
+      "secs": 34,
+      "cost": 0.118,
+      "hidden": 7,
+      "ownTests": 6,
+      "freshTotal": 26309,
+      "peak": 32612,
+      "subagents": 0,
+      "turns": 8
+    },
+    {
+      "run": 3,
+      "arm": "normal",
+      "secs": 37,
+      "cost": 0.139,
+      "hidden": 7,
+      "ownTests": 6,
+      "freshTotal": 32210,
+      "peak": 39819,
+      "subagents": 0,
+      "turns": 10
+    },
+    {
+      "run": 3,
+      "arm": "best",
+      "secs": 43,
+      "cost": 0.161,
+      "hidden": 7,
+      "ownTests": 12,
+      "freshTotal": 35742,
+      "peak": 41724,
+      "subagents": 0,
+      "turns": 9
+    }
+  ],
+  "median": {
+    "none": {
+      "hidden": 6,
+      "ownTests": 5,
+      "freshTotal": 25559,
+      "peak": 31864,
+      "secs": 34,
+      "cost": 0.115,
+      "subagents": 0
+    },
+    "lite": {
+      "hidden": 7,
+      "ownTests": 6,
+      "freshTotal": 32544,
+      "peak": 36440,
+      "secs": 47,
+      "cost": 0.154,
+      "subagents": 0
+    },
+    "low-tokens": {
+      "hidden": 7,
+      "ownTests": 6,
+      "freshTotal": 27841,
+      "peak": 34115,
+      "secs": 35,
+      "cost": 0.122,
+      "subagents": 0
+    },
+    "normal": {
+      "hidden": 7,
+      "ownTests": 6,
+      "freshTotal": 32210,
+      "peak": 39819,
+      "secs": 37,
+      "cost": 0.139,
+      "subagents": 0
+    },
+    "best": {
+      "hidden": 7,
+      "ownTests": 12,
+      "freshTotal": 36943,
+      "peak": 43463,
+      "secs": 43,
+      "cost": 0.161,
+      "subagents": 0
+    }
+  }
+}

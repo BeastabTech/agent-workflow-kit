@@ -9,6 +9,16 @@ const { loadConfig, enabled } = require('../lib/config');
 const B = require('../lib/budget');
 const { readInput, respondPreToolUse } = require('../lib/hook-io');
 
+/** Tracked file count, or -1 when unknown (not a git repo, git missing). */
+function trackedFiles(root) {
+  try {
+    const out = require('child_process').execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64 * 1024 * 1024 });
+    return out.split('\n').filter(Boolean).length;
+  } catch (_) {
+    return -1;
+  }
+}
+
 function main() {
   const input = readInput();
   if (!input.tool_input) process.exit(0); // broken or empty input: do not count it
@@ -25,10 +35,18 @@ function main() {
   try {
     B.save(cfg.root, sid, state);
   } catch (_) {}
-  if (verdict.level === 'ok') process.exit(0);
+  const findings = [];
+  if (/(^|:)explorer$/.test(String(ti.subagent_type || '')) && limits.smallRepoFiles > 0) {
+    const n = trackedFiles(cfg.root);
+    if (n >= 0 && n < limits.smallRepoFiles) {
+      findings.push({ level: cfg.profile === 'strict' ? 'ask' : 'warn', check: 'agent-budget', reason: `This repo has ${n} tracked files (under ${limits.smallRepoFiles}). A search here is small enough for git grep; in a measured run an explorer sub-agent cost about 6.7 times the tokens and 4 times the time with no saving in the main context. Do the search yourself unless it needs dozens of file reads.` });
+    }
+  }
+  if (verdict.level === 'ok') respondPreToolUse(findings);
   const sum = B.summary(state, limits);
   const tail = ` (started ${sum.total}, running ${sum.active}, ~${Math.round(sum.estTokens / 1000)}k tokens estimated). Tell the user before spawning more: \`node .agents/tools/budget.js status\`.`;
-  respondPreToolUse([{ level: verdict.level === 'ask' || cfg.profile === 'strict' ? 'ask' : 'warn', check: 'agent-budget', reason: verdict.messages.join(' ') + tail }]);
+  findings.push({ level: verdict.level === 'ask' || cfg.profile === 'strict' ? 'ask' : 'warn', check: 'agent-budget', reason: verdict.messages.join(' ') + tail });
+  respondPreToolUse(findings);
 }
 
 if (require.main === module) {

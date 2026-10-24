@@ -18,6 +18,9 @@ const DEFAULT_LIMITS = {
   tokenBudget: 0, // estimated tokens for all sub-agents; 0 = no limit
   maxPromptChars: 6000, // brief size that starts to cost real context
   maxFixRounds: 2, // used by the closer and reviewers (text rules only)
+  maxLoopRounds: 8, // rounds of one loop (fix until green, review and fix) before it must stop
+  stuckRepeats: 2, // the same failure this many rounds in a row ends a loop
+  smallRepoFiles: 400, // an explorer in a repo with fewer tracked files is a net loss: warn (0 = never)
 };
 
 function limitsFrom(cfg) {
@@ -134,4 +137,52 @@ function plan(limits, p) {
   return { agents, parallel, briefChars, estTokens: est, warnings, limits };
 }
 
-module.exports = { DEFAULT_LIMITS, limitsFrom, stateFile, load, save, promptHash, estTokens, summary, evaluate, record, finish, plan, safeId };
+const TIERS = { small: 'small/fast model (haiku)', mid: 'mid model (sonnet)', strong: 'strong model (opus)' };
+
+/**
+ * Size the problem first, then pick mode, model tier and agent count. Inputs (all numbers or words):
+ * files = files to change, read = files to read or search, parts = independent parts,
+ * risk = none | high (auth, payments, data, deletes, migrations). The preset shifts the result.
+ */
+function triage(t, preset) {
+  let name = preset || 'normal';
+  const auto = name === 'auto';
+  if (auto) name = 'normal'; // refined below once the size is known
+  const files = Math.max(0, Number(t.files) || 0);
+  const read = Math.max(0, Number(t.read) || 0);
+  const parts = Math.max(1, Number(t.parts) || 1);
+  const high = /^(high|yes|true)$/i.test(String(t.risk || ''));
+  let size = files <= 3 && read <= 8 && parts <= 1 ? 'S' : files <= 8 && read <= 30 && parts <= 2 ? 'M' : parts >= 3 && files > 8 ? 'XL' : 'L';
+  if (high && size === 'S') size = 'M';
+  if (auto) name = high || size === 'L' || size === 'XL' ? 'best' : size === 'S' ? 'low-tokens' : 'normal';
+  let mode;
+  let agents = 0;
+  let model = size === 'S' ? 'small' : size === 'M' ? 'mid' : 'mid';
+  const notes = [];
+  if (name === 'low-tokens' && (size === 'L' || size === 'XL')) {
+    mode = '2 workers at most on separate files, you plan it yourself, no closer';
+    agents = 2;
+    notes.push('Cheapest edition: work in waves, keep briefs and reports short, hand off when the context fills.');
+  } else if (name === 'lite' || name === 'low-tokens') {
+    mode = 'solo';
+    if (size === 'L' || size === 'XL') notes.push('Large problem, but this edition stays solo: work in steps and hand off (handoff skill) when the context fills.');
+  } else if (size === 'S') {
+    mode = 'solo';
+  } else if (size === 'M') {
+    mode = read > 15 ? 'one helper (explorer for the reading, you edit)' : 'solo';
+    agents = read > 15 ? 1 : 0;
+  } else {
+    mode = size === 'L' ? `${Math.min(parts, 4)} workers on separate files` : 'planner first, then workers on separate files, then closer';
+    agents = size === 'L' ? Math.min(parts, 4) : Math.min(parts, 4) + 1;
+    model = 'mid';
+    notes.push('Strong model only for design and the risky parts; mid for well-specified workers; small for reading and docs.');
+  }
+  const review = high || name === 'best' ? (size === 'S' && !high ? 'self-review only' : 'independent reviewer' + (high ? ' (security-reviewer for auth, payments, data)' : '')) : size === 'S' ? 'self-review' : 'self-review, reviewer if the change is cross-cutting';
+  if (review.startsWith('independent')) agents += 1;
+  if (name === 'low-tokens' && model === 'mid' && size === 'M') model = 'small';
+  if (name === 'best' && size !== 'S') model = 'strong';
+  if (high && model === 'small') model = 'mid';
+  return { size, mode, agents, model: TIERS[model], review, preset: auto ? 'auto' : name, notes };
+}
+
+module.exports = { triage, DEFAULT_LIMITS, limitsFrom, stateFile, load, save, promptHash, estTokens, summary, evaluate, record, finish, plan, safeId };

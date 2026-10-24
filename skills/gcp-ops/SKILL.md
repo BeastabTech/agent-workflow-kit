@@ -1,6 +1,6 @@
 ---
 name: gcp-ops
-description: Work safely with Google Cloud through gcloud, gsutil or bq - confirm account, project and region first, read before you write, least-privilege IAM, plan changes with rollback, approval before anything that creates, changes, deletes or costs money, and no project ids, service-account emails or keys in docs or commits. Use for any GCP task - Compute Engine VMs, Cloud Run, GKE, Cloud SQL, Cloud Storage, IAM, logging, Secret Manager, billing questions.
+description: Work safely with Google Cloud (gcloud, gsutil, bq): confirm account, project and region, read before write, least-privilege IAM, rollback plan, approval before anything that changes or costs money, no ids or keys in docs. Use for any GCP task: Compute Engine, Cloud Run, GKE, Cloud SQL, Storage, IAM, logging, billing.
 ---
 
 # GCP operations

@@ -1,6 +1,6 @@
 ---
 name: aws-ops
-description: Work safely with AWS through the AWS CLI or an AWS MCP server - confirm account, profile and region first, read before you write, least-privilege IAM, plan changes with rollback, approval before anything that creates, changes, deletes or costs money, and no account ids, ARNs or secrets in docs or commits. Use for any AWS task - EC2, ECS, Lambda, S3, RDS, IAM, CloudWatch logs, Secrets Manager, cost questions.
+description: Work safely with AWS (CLI or MCP): confirm account, profile and region, read before write, least-privilege IAM, rollback plan, approval before anything that changes or costs money, no account ids or secrets in docs. Use for any AWS task: EC2, ECS, Lambda, S3, RDS, IAM, CloudWatch, cost questions.
 ---
 
 # AWS operations

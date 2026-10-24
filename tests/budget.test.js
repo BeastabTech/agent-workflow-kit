@@ -58,7 +58,7 @@ test('plan: warns about too many agents, parallelism and a serial plan', () => {
 });
 
 test('pre-agent hook: allows, warns, asks over the limit; sessions are separate', () => {
-  const { dir } = tmpRepo({ limits: { maxSpawns: 4, maxParallel: 10 } });
+  const { dir } = tmpRepo({ limits: { maxSpawns: 4, maxParallel: 10, smallRepoFiles: 0 } });
   assert.equal(decision(spawnIn(dir, 's1')), 'allow'); // 1
   assert.equal(decision(spawnIn(dir, 's1')), 'allow'); // 2
   const third = spawnIn(dir, 's1'); // 3 of 4 = 75%
@@ -72,7 +72,7 @@ test('pre-agent hook: allows, warns, asks over the limit; sessions are separate'
 });
 
 test('pre-agent hook: kill switches and broken input never block', () => {
-  const { dir } = tmpRepo({ limits: { maxSpawns: 1 } });
+  const { dir } = tmpRepo({ limits: { maxSpawns: 1, smallRepoFiles: 0 } });
   spawnIn(dir, 's');
   const env = (e) => runHook('pre-agent', { session_id: 's', cwd: dir, tool_input: { prompt: 'x', description: 'y' } }, e);
   assert.equal(decision(env({})), 'ask');
@@ -83,7 +83,7 @@ test('pre-agent hook: kill switches and broken input never block', () => {
 });
 
 test('subagent-stop frees a parallel slot', () => {
-  const { dir } = tmpRepo({ limits: { maxParallel: 2, maxSpawns: 50 } });
+  const { dir } = tmpRepo({ limits: { maxParallel: 2, maxSpawns: 50, smallRepoFiles: 0 } });
   spawnIn(dir, 's');
   spawnIn(dir, 's');
   assert.equal(decision(spawnIn(dir, 's')), 'ask');
@@ -154,4 +154,69 @@ test('roster: one row per agent with state, claims and counts', () => {
 
 test('instruction is an accepted message type', () => {
   assert.ok(msg.TYPES.includes('instruction'));
+});
+
+test('pre-agent hook: explorer in a small repo warns, other agents and big limits do not', () => {
+  const { dir } = tmpRepo({});
+  const run = (type, env) => runHook('pre-agent', { session_id: 'sm' + Math.random(), cwd: dir, tool_input: { description: 'd', prompt: 'p' + Math.random(), subagent_type: type } }, env);
+  assert.equal(decision(run('explorer')), 'warn');
+  assert.equal(decision(run('agent-workflow-kit:explorer')), 'warn');
+  assert.equal(decision(run('reviewer')), 'allow');
+  assert.equal(decision(run('explorer', { AWK_PROFILE: 'strict' })), 'ask');
+  const { dir: big } = tmpRepo({ limits: { smallRepoFiles: 0 } });
+  assert.equal(decision(runHook('pre-agent', { session_id: 'b', cwd: big, tool_input: { description: 'd', prompt: 'p', subagent_type: 'explorer' } })), 'allow');
+});
+
+test('triage: sizes the problem, then picks mode, model tier and agents for each edition', () => {
+  const small = B.triage({ files: 1, read: 3 }, 'normal');
+  assert.equal(small.size, 'S');
+  assert.equal(small.agents, 0);
+  assert.match(small.mode, /solo/);
+  assert.match(small.model, /small/);
+  const big = B.triage({ files: 12, read: 40, parts: 4 }, 'normal');
+  assert.equal(big.size, 'XL');
+  assert.ok(big.agents >= 4);
+  assert.equal(B.triage({ files: 12, read: 40, parts: 4 }, 'lite').agents, 0);
+  assert.ok(B.triage({ files: 12, read: 40, parts: 4 }, 'low-tokens').agents <= 2);
+  assert.match(B.triage({ files: 6, read: 20 }, 'best').model, /strong/);
+  const risky = B.triage({ files: 1, read: 2, risk: 'high' }, 'low-tokens');
+  assert.notEqual(risky.size, 'S');
+  assert.match(risky.review, /independent/);
+  assert.doesNotMatch(risky.model, /small/);
+});
+
+test('triage --task: estimates the size from the text and decides without numbers', () => {
+  const { estimate } = require('../scripts/lib/triage-auto');
+  const { dir } = tmpRepo();
+  const small = estimate('fix the typo in the heading', dir);
+  assert.equal(small.risk, 'none');
+  assert.equal(B.triage(small, 'auto').size, 'S');
+  const big = estimate('rename the user model everywhere, update the payment webhook, migrate the schema, also add tests and docs', dir);
+  assert.equal(big.risk, 'high');
+  const t = B.triage(big, 'auto');
+  assert.ok(['L', 'XL'].includes(t.size));
+  assert.match(t.review, /independent/);
+  const cli = spawnSync('node', [path.join(ROOT, 'scripts', 'agent-budget.js'), 'triage', '--task', 'add login with password reset'], { cwd: dir, encoding: 'utf8', env: { ...process.env, AWK_PRESET: 'auto' } });
+  assert.match(cli.stdout, /Estimated from the task/);
+  assert.match(cli.stdout, /risk high/);
+});
+
+test('loop.js: DONE on pass, STOP on round limit and on the same failure twice', () => {
+  const fs2 = require('fs');
+  const { dir } = tmpRepo({});
+  const loop = (...a) => spawnSync('node', [path.join(ROOT, 'scripts', 'agent-loop.js'), ...a], { cwd: dir, encoding: 'utf8' }).stdout;
+  fs2.writeFileSync(path.join(dir, 'flag'), 'no');
+  const chk = `node -e "process.exit(require('fs').readFileSync('flag','utf8')==='yes'?0:(console.error('Error: expected yes',Math.random()>2?1:0),1))"`;
+  loop('start', '--name', 'a', '--check', chk, '--max', '5');
+  assert.match(loop('check', '--name', 'a'), /CONTINUE/);
+  assert.match(loop('check', '--name', 'a'), /STOP: stuck/); // same failure twice
+  assert.match(loop('check', '--name', 'a'), /already ended/);
+  loop('start', '--name', 'b', '--check', chk);
+  assert.match(loop('check', '--name', 'b'), /CONTINUE/);
+  fs2.writeFileSync(path.join(dir, 'flag'), 'yes');
+  assert.match(loop('check', '--name', 'b'), /DONE/);
+  loop('start', '--name', 'c', '--max', '2', '--stuck', '9');
+  assert.match(loop('step', '--name', 'c', '--result', 'fail', '--sig', 'one'), /CONTINUE/);
+  assert.match(loop('step', '--name', 'c', '--result', 'fail', '--sig', 'two'), /STOP: round limit 2/);
+  assert.match(loop('status'), /a: ended/);
 });

@@ -14,6 +14,7 @@ The kit costs context (see "Measured impact" in the README) and claims to save r
 ## Results so far
 
 - [Delegation on a small search](benchmarks/delegation-small-search.md): the sub-agent cost about 6.7 times the tokens and 4 times the time, with no main-context saving. Harness: `node scripts/bench-delegation.js --repo <dir>` (spends real tokens).
+- [Editions on one coding task](benchmarks/presets-coupons.md): `normal` and `best` passed 7/8 hidden tests every run vs 6.3 average with no kit, for 20-40% more tokens; `lite` and `low-tokens` in between. Harness: `node scripts/bench-presets.js --runs 3`.
 - Plugin evals (`claude plugin eval`, 1 run each): `closeout-fires` with the kit 1.00, without 0.00; `delegate-fires` with 1.00 (2 of 3 judge votes), without 0.00. Summary in the README.
 
 ## Protocol (A/B on one task)

@@ -1,6 +1,6 @@
 ---
 name: closer
-description: Last agent of a piece of work. Breaks the finished feature into parts, hunts for what is missing or broken (code, tests, docs, edge cases, security, old flows), fixes the clear low-risk items itself, asks the human only for real decisions, re-tests, and sends the manager a Closeout report saying what is done and what still needs a person. Use when all workers report done, before telling the user a feature is finished, or when asked to close out, finalize or double-check a feature.
+description: Last agent of a piece of work. Hunts for what is missing or broken in the finished feature, fixes clear low-risk items, asks the human only for real decisions, re-tests, and sends the manager a Closeout report. Use when all workers report done, before telling the user a feature is finished, or to double-check a feature.
 tools: Read, Grep, Glob, Bash, Write, Edit
 model: inherit
 ---

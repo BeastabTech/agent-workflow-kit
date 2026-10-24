@@ -28,7 +28,7 @@ All hooks are plain Node.js with no dependencies. They **fail open**: broken inp
 | `destructive-db` | `prisma migrate reset`, `prisma db push`, `db:reset/push/drop` scripts, `DROP TABLE/DATABASE/SCHEMA`, `TRUNCATE`, `DELETE FROM x` without `WHERE`, `rails db:drop`, django `flush`, `dropDatabase()`, `FLUSHALL`, `dropdb`, ORM schema drop, `knex migrate:rollback --all`, `terraform destroy` | deny (or ask with `"destructiveDb": "ask"`) | no |
 | `protected-files` | edit of a path matching `protectedFiles` | ask | yes |
 | `env-files` | edit of `.env`, `.env.local` and similar (not `.env.example`) | ask | no |
-| `agent-budget` | starting a sub-agent | warn from `warnAtPct` of a limit, a repeated or oversized brief; ask when `maxParallel`, `maxSpawns` or `tokenBudget` would be crossed | no (defaults apply) |
+| `agent-budget` | starting a sub-agent | warn from `warnAtPct` of a limit, a repeated or oversized brief; a warning when an `explorer` starts in a repo under `smallRepoFiles` tracked files; ask when `maxParallel`, `maxSpawns` or `tokenBudget` would be crossed | no (defaults apply) |
 
 ### Spawn budget
 

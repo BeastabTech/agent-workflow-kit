@@ -1,6 +1,6 @@
 ---
 name: context-budget
-description: Keep an agent's context small and tokens low - load only the docs a task needs, read file ranges not whole files, delegate wide searches to a subagent, filter long outputs, short replies, set up auto-compact and compact instructions, and write a hand-off before the context fills. Use in long sessions, for managers, when the context is getting full, or when asked to save tokens, set up auto compact or work leaner.
+description: Keep context small and tokens low: load only needed docs, read file ranges, filter long output, short replies, compact settings, hand-off before the context fills. Use in long sessions, for managers, when context is getting full, or when asked to save tokens.
 ---
 
 # Context budget

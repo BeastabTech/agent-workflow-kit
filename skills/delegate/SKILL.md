@@ -1,13 +1,16 @@
 ---
 name: delegate
-description: Decide whether to hand work to a sub-agent, and do it with the least context and cost - when to delegate, which agent and model, how small the brief and the returned report should be, and how to size the plan and check it against the spawn limits, telling the user, before starting anything. Use before spawning any sub-agent or worker, when a task needs wide searching or many file reads, when asked to run things in parallel, or when the session is using too many agents or too much context.
+description: Decide whether to hand work to a sub-agent (default: do it yourself), pick agent and model, keep briefs and reports small, and check the plan against spawn limits before starting. Use before spawning any sub-agent or worker, for wide searches, parallel work, or when a session uses too many agents or too much context.
 ---
 
 # Delegate with a small footprint
 
 A sub-agent has its own context window. What you gain: your context stays small. What it costs: its tokens, plus whatever you paste into the brief and read back. Delegate when the gain is bigger than the cost.
 
-## First: size the plan and check it against the limits
+## Default: solo
+Size the problem first: `node .agents/tools/budget.js triage --files <n> --read <n> --parts <n> [--risk high]` gives the mode, model tier and agent count. Delegation is the exception. Over 1-3 files or one `git grep`-sized search, do it yourself. The hook warns when you start an `explorer` in a repo under `limits.smallRepoFiles` (400) tracked files.
+
+## Then: size the plan and check it against the limits
 
 Before you spawn anything, write down how many agents the plan needs (workers, one reviewer, the `closer`) and how many run at once, then check it:
 ```bash

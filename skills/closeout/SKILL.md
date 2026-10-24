@@ -1,6 +1,6 @@
 ---
 name: closeout
-description: Close out a finished feature - split it into parts, hunt for missing or broken pieces (code, tests, docs, edge cases, security, old flows), fix clear low-risk items yourself, ask the human only for real decisions, re-test, and send the manager a Closeout report of what is done and what still needs a person. Use when all workers report done, before saying a feature is finished or shipped, when the manager asks for a final check, or when asked to close out, finalize or find what is missing.
+description: Close out a finished feature: split it into parts, hunt for missing or broken pieces, fix clear low-risk items, ask the human only for real decisions, re-test, and send the manager a Closeout report. Use when all workers report done, before saying a feature is finished or shipped, or when asked to close out or find what is missing.
 argument-hint: "[feature or branch]"
 ---
 

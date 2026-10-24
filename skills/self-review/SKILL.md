@@ -1,6 +1,6 @@
 ---
 name: self-review
-description: Review your own change as a strict reviewer before calling it done - correctness, compatibility, security, concurrency, edge cases, tests, docs - then write a Done report with real evidence (commands and result lines) and an honest list of what was not run. Use before saying done, finished, ready, fixed or shipped, when asked what to check before calling work done or what a done report should contain, and before asking for a review or commit.
+description: Review your own change as a strict reviewer before calling it done (correctness, security, edge cases, tests, docs), then write a Done report with real evidence and what was not run. Use before saying done, fixed or shipped, and before asking for a review or commit.
 ---
 
 # Self-review and Done report

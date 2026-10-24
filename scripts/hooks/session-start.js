@@ -9,6 +9,7 @@ const path = require('path');
 const { loadConfig, sharedRoot } = require('../lib/config');
 const { readInput } = require('../lib/hook-io');
 const { limitsFrom } = require('../lib/budget');
+const presets = require('../lib/presets');
 
 const STYLES = {
   'caveman-lite': 'Reply style (personal setting): terse. Drop filler, pleasantries and hedging; keep full sentences, exact code, paths and numbers.',
@@ -26,6 +27,8 @@ function main() {
   const cfg = loadConfig(cwd);
   if (cfg.hooksOff) process.exit(0);
   const notes = [];
+  const directive = presets.get(cfg.preset).directive;
+  if (directive) notes.push(directive);
   if (STYLES[cfg.personal.replyStyle]) notes.push(STYLES[cfg.personal.replyStyle]);
   if (input.source === 'compact') {
     notes.push('The conversation was just compacted. Do not re-read whole files or re-run searches you already summarised; re-open only what the next step needs. In a kit project, re-read .agents/HANDOFF.md and your rows in .agents/STATE.md first.');

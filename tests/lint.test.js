@@ -112,3 +112,22 @@ test('nothing personal: no emails, home paths or private hostnames in tracked te
     assert.ok(!m || /noreply@|@anthropic|ci@|dev@|a@b\.c/.test(m[0]) || f === 'tests/lint.test.js', `${f}: email ${m && m[0]}`);
   }
 });
+
+test('relative links in tracked markdown point to files that exist', () => {
+  const { execFileSync } = require('child_process');
+  const files = execFileSync('git', ['ls-files', '*.md'], { cwd: ROOT, encoding: 'utf8' }).split('\n').filter(Boolean);
+  for (const f of files) {
+    const text = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    for (const [, link] of text.matchAll(/\]\(((?!https?:|#|mailto:)[^)\s]+)\)/g)) {
+      const target = link.split('#')[0];
+      if (!target) continue;
+      assert.ok(fs.existsSync(path.join(ROOT, path.dirname(f), target)), `${f}: broken link ${link}`);
+    }
+  }
+});
+
+test('package.json and plugin.json share one version', () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+  const plugin = JSON.parse(fs.readFileSync(path.join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'));
+  assert.equal(pkg.version, plugin.version);
+});

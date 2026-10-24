@@ -1,6 +1,6 @@
 ---
 name: team-status
-description: Show the user who is on the team and what everyone is doing - agents, sessions, tasks, claims, blockers, spawn count and estimated tokens - and explain how the user can give an instruction to any worker through the manager, or talk to a worker directly. Use when the user asks who is working on what, for status, for the team or sub-chats, wants to tell one worker something, or wants to step into a worker's session.
+description: Show who is on the team and what each is doing (agents, tasks, claims, blockers, spawn count, estimated tokens) and how to give an instruction to a worker. Use when asked who is working on what, for status, or to tell one worker something.
 ---
 
 # Team status and talking to workers

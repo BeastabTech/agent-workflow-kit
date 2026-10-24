@@ -4,6 +4,9 @@
  * Spawn budget CLI for managers (copied to .agents/tools/budget.js by init).
  *
  *   budget.js limits                                         show the limits in force
+ *   budget.js triage --task "<request>"                      the kit estimates the numbers itself
+ *   budget.js triage --files 2 --read 5 [--parts 1] [--risk high]
+ *                                                            size the problem FIRST: mode, model tier, agents, review
  *   budget.js plan --agents 6 [--parallel 3] [--brief-chars 2000]
  *                                                            check a plan BEFORE spawning; prints warnings
  *   budget.js status [--session <id>]                        agents started, running, estimated tokens
@@ -48,6 +51,19 @@ function main() {
   const out = (s) => process.stdout.write(s + '\n');
   if (cmd === 'limits') {
     out(Object.entries(limits).map(([key, v]) => `${key}: ${v}`).join('\n'));
+  } else if (cmd === 'triage') {
+    let nums = a;
+    let why = null;
+    if (a.task && a.task !== true) {
+      const est = require('./lib/triage-auto').estimate(a.task, cfg.root);
+      nums = { files: a.files !== undefined ? a.files : est.files, read: a.read !== undefined ? a.read : est.read, parts: a.parts !== undefined ? a.parts : est.parts, risk: a.risk !== undefined ? a.risk : est.risk };
+      why = `Estimated from the task: files ${nums.files}, read ${nums.read}, parts ${nums.parts}, risk ${nums.risk}. Override with --files --read --parts --risk if wrong.`;
+    }
+    const t = B.triage(nums, cfg.preset);
+    if (why) out(why);
+    out(`Size ${t.size} (${t.preset}): ${t.mode}. Model: ${t.model}. Agents: ${t.agents}. Review: ${t.review}.`);
+    for (const n of t.notes) out(`Note: ${n}`);
+    if (t.agents) out('Next: budget.js plan --agents ' + t.agents);
   } else if (cmd === 'plan') {
     const p = B.plan(limits, { agents: a.agents, parallel: a.parallel, briefChars: a.briefChars });
     out(`Plan: ${p.agents} agent(s), ${p.parallel} at once, ${k(p.estTokens)} tokens estimated (assumes ${k(limits.assumedAgentTokens)} per agent).`);

@@ -6,6 +6,7 @@
  * Env switches: AWK_HOOKS=off disables every hook; AWK_DISABLE=check1,check2 disables single checks.
  */
 const fs = require('fs');
+const presets = require('./presets');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
@@ -27,6 +28,7 @@ const DEFAULTS = {
 
 // minimal keeps only the clear safety nets; strict turns warnings and soft asks into hard stops.
 const PROFILES = ['minimal', 'standard', 'strict'];
+const REPLY_STYLES = ['normal', 'caveman-lite', 'caveman-full'];
 const MINIMAL_OFF = new Set(['explicit-staging', 'protected-branch', 'protected-files', 'env-files', 'agent-budget']);
 
 function git(args, cwd) {
@@ -76,14 +78,18 @@ function loadConfig(cwd) {
       .map((s) => s.trim())
       .filter(Boolean),
   );
-  const wanted = String(process.env.AWK_PROFILE || process.env.CLAUDE_PLUGIN_OPTION_PROFILE || cfg.profile || '').trim().toLowerCase();
-  cfg.profile = PROFILES.includes(wanted) ? wanted : 'standard';
+  cfg.preset = presets.pick(process.env.AWK_PRESET, process.env.CLAUDE_PLUGIN_OPTION_PRESET, cfg.preset) || presets.DEFAULT_PRESET;
+  const preset = presets.get(cfg.preset);
+  cfg.limits = { ...preset.limits, ...((team && team.limits) || {}) };
+  const wanted = String(process.env.AWK_PROFILE || process.env.CLAUDE_PLUGIN_OPTION_PROFILE || (team && team.profile) || '').trim().toLowerCase();
+  cfg.profile = PROFILES.includes(wanted) ? wanted : preset.profile;
   cfg.hooksOff = /^(off|false|0)$/i.test(String(process.env.AWK_HOOKS || '')) || !boolOption('HOOKS_ENABLED', true);
+  const replyWanted = String(process.env.CLAUDE_PLUGIN_OPTION_REPLY_STYLE || '').trim().toLowerCase();
   cfg.personal = {
     blockAiTrailers: boolOption('BLOCK_AI_TRAILERS', true),
     secretScan: boolOption('SECRET_SCAN', true),
     destructiveDbGuard: boolOption('DESTRUCTIVE_DB_GUARD', true),
-    replyStyle: String(process.env.CLAUDE_PLUGIN_OPTION_REPLY_STYLE || 'normal').trim().toLowerCase(),
+    replyStyle: REPLY_STYLES.includes(replyWanted) ? replyWanted : preset.replyStyle,
   };
   return cfg;
 }

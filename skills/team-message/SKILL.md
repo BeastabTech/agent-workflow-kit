@@ -1,6 +1,6 @@
 ---
 name: team-message
-description: Draft one self-contained hand-off message for another team (frontend, mobile, QA, support, partners) that needs no repo access - the full flow step by step, request and response samples with field notes, types, errors with the UI action, what is not live yet. Use when work is ready to share with another team or a tester, or when asked to write a hand-off, integration guide or release note for people outside this repo.
+description: Draft one self-contained hand-off message for another team (frontend, mobile, QA, support) that needs no repo access: flow, request and response samples, errors, what is not live. Use when work is ready to share, or when asked for a hand-off, integration guide or release note.
 ---
 
 # Team hand-off message

@@ -43,6 +43,20 @@ Existing files are never overwritten unless you pass `--force`, and `--dry-run` 
 
 ---
 
+## Pick an edition
+
+The install asks which one you want. Pick by the work, not the biggest one. Details: [docs/EDITIONS.md](docs/EDITIONS.md).
+
+| Edition | For | What changes |
+|---|---|---|
+| `lite` | quick fixes, small projects | safety net only, compact `AGENTS.md`, 5 skills, no plugin needed |
+| `low-tokens` | cutting cost | short replies, solo unless the problem is big, 9 skills, no plugin needed |
+| `auto` | let the kit decide | sizes each task from your words and the repo, then acts like low-tokens, normal or best |
+| `normal` (default) | most work | all skills and hooks, sub-agents only where they pay off |
+| `best` | where a miss is expensive | strict hooks, edge cases and tests first, independent review, closeout |
+
+Repeating work (fix until green, review and fix, watch) goes through the `loop` skill, which has a round limit and a stuck rule. Every edition sizes the problem first (`budget.js triage --task "..."`; `auto` does it itself): small work is solo on a small model, bigger work earns more agents and a stronger model, risky code always gets a reviewer. Terminal: `node scripts/init-project.js --target . --preset best` (asks if you leave `--preset` out).
+
 ## How it fits together
 
 ```mermaid
@@ -98,7 +112,7 @@ More: [docs/FLOW.md](docs/FLOW.md).
 | Setup and memory | `init`, `docs-sync`, `context-budget`, `lessons`, `caveman` |
 | Several agents | `manager`, `state-keeper`, `agent-comms`, `handoff`, `peer-review`, `team-message`, `team-status` |
 | Everyday engineering | `plan`, `tdd`, `debug`, `bug-intake`, `safe-change`, `self-review`, `closeout`, `git-workflow` |
-| Low-context delegation | `delegate` |
+| Low-context delegation and loops | `delegate`, `loop` |
 | Backend and data | `api-design`, `db-migration`, `file-uploads`, `timezones-i18n`, `ai-feature`, `security-audit` |
 | Frontend and apps | `frontend-design`, `responsive-ui`, `html-page`, `design-review`, `webapp-testing`, `mobile-app` |
 | Cloud and release | `aws-ops`, `gcp-ops`, `deploy` (manual only: `/agent-workflow-kit:deploy`) |
@@ -169,8 +183,8 @@ Real numbers from real runs, including the ones that do not flatter the kit. Met
 
 | Measure | Tokens (est.) |
 |---|---|
-| Always loaded: 37 skill + 9 agent descriptions | ~4.2k |
-| One skill body, loaded only when used (average / largest) | ~0.5k / ~1.0k |
+| Always loaded: 38 skill + 9 agent descriptions | ~3.9k |
+| One skill body, loaded only when used (average / largest) | ~0.5k / ~1.4k |
 | `AGENTS.md` index in a new project | ~1.0k |
 | Cold start, index + the largest single context doc | ~1.9k |
 | Cold start, reading all 8 context docs and rules instead | ~4.8k |
@@ -198,6 +212,18 @@ The search was small enough for `git grep`, so the main context never filled and
 Earlier runs of the same case did not count: with the first, easier grader both arms passed (difference 0.00), and after the grader was tightened both arms failed until the skill's limit check was moved to the top. One run per case, so treat the size of the gap as indicative.
 
 **4. What a long session looks like.** One long working session of this repo, no sub-agents: 71 turns, main context peaked at 206.6k tokens, 390k fresh tokens in total. The small search above peaked at 32k. This is one session, not a comparison; it is why splitting and hand-offs exist, and why `context-budget` tells agents to write a hand-off at about two thirds full.
+
+**3b. Do the editions help on a real coding task?** ([details](docs/benchmarks/presets-coupons.md); add coupons to a cart module, quality = 8 hidden tests, sonnet, 3 runs each)
+
+| | no kit | lite | low-tokens | normal | best |
+|---|---|---|---|---|---|
+| Hidden tests passed, each run | 7, 6, 6 | 7, 7, 6 | 7, 6, 7 | 7, 7, 7 | 7, 7, 7 |
+| Fresh tokens (median) | 25.6k | 32.5k | 27.8k | 32.2k | 36.9k |
+| Cost (median) | $0.115 | $0.154 | $0.122 | $0.139 | $0.161 |
+
+`normal` and `best` were steadier (7 of 8 every run) for 20 to 40 percent more tokens: a small gain on a small task. No sub-agent was used by any edition, and each stayed solo as the size step says. It does not yet show whether `best` pays off on a large or risky task.
+
+**What the kit does with these numbers.** Delegation is not the default. The `manager` skill starts with a triage: 1-3 files or a `git grep`-sized search is done solo (no agents); one wide read goes to one sub-agent; only independent tasks on different files get several agents; risky code (auth, payments, data) gets a reviewer, not more workers. A hook also warns when an `explorer` starts in a repo under 400 tracked files (`limits.smallRepoFiles`). Where tokens are spent on purpose: review, tests and the final closeout, where a miss costs more than the tokens.
 
 **Read this honestly**
 - The kit is not free: about 4k tokens of descriptions sit in every session. It pays off when work is long, split across agents, or resumed after a reset.

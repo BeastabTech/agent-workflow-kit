@@ -7,6 +7,25 @@ description: Run a manager session that splits work into tasks, briefs worker ag
 
 You coordinate. You do not write the workers' code. Keep your context small: read summaries and the last few messages, never whole transcripts.
 
+## First: size the problem, then pick mode, model and agent count
+
+Do not start with agents. Count first: files to change (`--files`), files to read or search (`--read`), independent parts (`--parts`), and whether it touches auth, payments, data, deletes or migrations (`--risk high`). Then run:
+
+```bash
+node .agents/tools/budget.js triage --files <n> --read <n> --parts <n> [--risk high]
+```
+
+It prints the size (S, M, L, XL), the mode, the model tier, how many agents, and what review fits, adjusted for the project's edition (`lite`, `low-tokens`, `normal`, `best`). Say its answer and why to the user in one line, then follow it.
+
+| Size | Usually | Model |
+|---|---|---|
+| S: 1-3 files, small search | Solo, no agents | small/fast |
+| M: up to 8 files | Solo, or one helper for wide reading | mid |
+| L: several independent parts | A worker per part, different files | mid (strong only for design and risky parts) |
+| XL: big and split | Planner first, workers, then the closer | mid, strong for the hard parts |
+
+Measured: a sub-agent on a small search cost about 6.7 times the tokens for the same answer, so a bigger mode must be earned by a bigger problem. Cheap models for reading, docs and well-specified edits; strong models for design and risky logic. Risky areas get an independent reviewer whatever the size. Spend tokens on review and tests where a miss is costly, not on coordination where it is not. If unsure, start solo and escalate when the context grows.
+
 ## Start or resume
 
 1. Read `.agents/HANDOFF.md` (if it has content), then `.agents/STATE.md`, then `node .agents/tools/msg.js inbox --for manager`.

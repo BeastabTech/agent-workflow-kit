@@ -17,6 +17,13 @@ Target: `$ARGUMENTS` (default: the current repo root).
 
 ## 2. Interview (one message, numbered, each with your recommendation)
 
+0. **Which edition?** Ask this first, as a single choice, with your recommendation (`normal` unless they say otherwise):
+   - `lite`: safety net only, least overhead; compact `AGENTS.md`, five core skills, git hooks, no plugin needed.
+   - `low-tokens`: cheapest sessions; short replies, solo unless the problem is big, nine core skills, no plugin needed.
+   - `auto`: the kit sizes each task itself and behaves like low-tokens, normal or best as needed (good if they do not want to choose).
+   - `normal`: balanced default; full skills and hooks, solo for small work, self-review before done.
+   - `best`: highest quality, more tokens; strict hooks, tests with edge cases first, independent review of risky code, closeout on multi-part work.
+   Pass the answer as `"preset"` in the answers JSON (or `--preset <name>`). Details: `docs/EDITIONS.md`.
 1. Project name and one-line summary.
 2. Stack and source folders.
 3. Commands: install, type-check, build, test, lint, dev (prefill from step 1).
