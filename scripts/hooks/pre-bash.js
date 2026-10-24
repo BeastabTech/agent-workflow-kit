@@ -198,7 +198,8 @@ function checkDestructiveDb(cmd, cfg) {
 function main() {
   const input = readInput();
   const cmd = String((input.tool_input && input.tool_input.command) || '');
-  const cwd = input.cwd || process.cwd();
+  // `git -C <dir>` acts on another repo: read that repo's team config and state.
+  const cwd = gitCwd(cmd, input.cwd || process.cwd());
   if (!cmd) process.exit(0);
   const cfg = loadConfig(cwd);
   if (cfg.hooksOff) process.exit(0);
