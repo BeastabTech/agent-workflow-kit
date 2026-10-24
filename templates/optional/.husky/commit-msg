@@ -1,0 +1,11 @@
+# Conventional commits, and no AI attribution trailers.
+msg_file="$1"
+if grep -qiE '^\s*co-authored-by:|generated with' "$msg_file"; then
+  echo "Commit message has an attribution trailer or a 'Generated with' line. Remove it."
+  exit 1
+fi
+first=$(head -n1 "$msg_file")
+if ! printf '%s' "$first" | grep -qE '^(feat|fix|docs|refactor|test|chore|ci|perf|build|style|revert)(\([a-z0-9._/-]+\))?!?: .+'; then
+  echo "Use a conventional commit subject: type(scope): subject"
+  exit 1
+fi

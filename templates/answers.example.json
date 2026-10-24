@@ -1,0 +1,25 @@
+{
+  "projectName": "todo-api",
+  "summary": "Small REST API for personal to-do lists.",
+  "stack": "Node.js 22, Express, SQLite",
+  "sourceDirs": "src",
+  "commands": {
+    "install": "npm ci",
+    "typecheck": "npm run typecheck",
+    "build": "npm run build",
+    "test": "npm test",
+    "lint": "npm run lint",
+    "dev": "npm run dev"
+  },
+  "baseBranch": "main",
+  "protectedBranches": ["main"],
+  "protectedFiles": ["src/db/schema.sql", "src/auth/**"],
+  "workMode": "shared",
+  "stateSync": "git",
+  "commitPolicy": "on-request",
+  "timezone": "UTC",
+  "owners": [
+    { "area": "API routes", "paths": "src/routes/**", "owner": "<api owner>" },
+    { "area": "Database and auth", "paths": "src/db/**, src/auth/**", "owner": "<platform owner>" }
+  ]
+}

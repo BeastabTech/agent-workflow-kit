@@ -1,0 +1,12 @@
+---
+description: Project rules and agent workflow for {{PROJECT_NAME}}
+alwaysApply: true
+---
+
+Read `AGENTS.md` first. It is the project index and its golden rules apply to every change.
+
+- Team rules: `.claude/rules/*.md` (plain Markdown, they apply to every tool, not only Claude).
+- Facts: `docs/context/` - open only the file the task needs.
+- Shared agent state, hand-off, bugs and message log: `.agents/` (see `.agents/README.md`).
+- Skills (step-by-step procedures): `.agents/skills/<name>/SKILL.md` when exported - read the matching one before that kind of task.
+- Before saying done: `docs/context/SELF_REVIEW.md` and `docs/context/DEFINITION_OF_DONE.md`.

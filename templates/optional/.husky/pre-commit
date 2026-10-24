@@ -1,0 +1,11 @@
+# Secret scan first: refuse the commit if a credential pattern is staged.
+# Install gitleaks (https://github.com/gitleaks/gitleaks). If missing, warn but do not block.
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --redact --no-banner || {
+    echo ""
+    echo "gitleaks blocked the commit. Remove the secret or update .gitleaks.toml."
+    exit 1
+  }
+else
+  echo "gitleaks not installed: skipping secret scan."
+fi

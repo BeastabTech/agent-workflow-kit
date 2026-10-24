@@ -1,0 +1,16 @@
+# gitleaks config: extends the default rules.
+# Pre-commit: gitleaks protect --staged --redact --no-banner
+# Full scan:  gitleaks detect --redact --no-banner
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Gitignored secret holders and build output"
+paths = [
+  '''(^|/)\.env$''',
+  '''(^|/)\.env\.[^/]+$''',
+  '''(^|/)dist/.*''',
+  '''(^|/)build/.*''',
+  '''(^|/)coverage/.*''',
+]
