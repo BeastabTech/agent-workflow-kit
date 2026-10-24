@@ -10,7 +10,18 @@
   "homepage": "https://github.com/BeastabTech/agent-workflow-kit",
   "repository": "https://github.com/BeastabTech/agent-workflow-kit",
   "license": "MIT",
-  "keywords": ["workflow", "multi-agent", "orchestration", "agents-md", "hooks", "code-review", "safe-change", "handoff", "bug-intake", "tdd"],
+  "keywords": [
+    "workflow",
+    "multi-agent",
+    "orchestration",
+    "agents-md",
+    "hooks",
+    "code-review",
+    "safe-change",
+    "handoff",
+    "bug-intake",
+    "tdd"
+  ],
   "userConfig": {
     "hooks_enabled": {
       "type": "boolean",
@@ -41,6 +52,12 @@
       "title": "Reply style",
       "description": "Personal reply style for every session: normal, caveman-lite or caveman-full.",
       "default": "normal"
+    },
+    "profile": {
+      "type": "string",
+      "title": "Hook profile",
+      "description": "minimal (only clear safety nets), standard (default) or strict (warnings and soft asks become stops).",
+      "default": "standard"
     }
   }
 }

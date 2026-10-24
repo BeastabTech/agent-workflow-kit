@@ -25,6 +25,10 @@ const DEFAULTS = {
   limits: {},
 };
 
+// minimal keeps only the clear safety nets; strict turns warnings and soft asks into hard stops.
+const PROFILES = ['minimal', 'standard', 'strict'];
+const MINIMAL_OFF = new Set(['explicit-staging', 'protected-branch', 'protected-files', 'env-files', 'agent-budget']);
+
 function git(args, cwd) {
   try {
     return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 8000 }).trim();
@@ -72,6 +76,8 @@ function loadConfig(cwd) {
       .map((s) => s.trim())
       .filter(Boolean),
   );
+  const wanted = String(process.env.AWK_PROFILE || process.env.CLAUDE_PLUGIN_OPTION_PROFILE || cfg.profile || '').trim().toLowerCase();
+  cfg.profile = PROFILES.includes(wanted) ? wanted : 'standard';
   cfg.hooksOff = /^(off|false|0)$/i.test(String(process.env.AWK_HOOKS || '')) || !boolOption('HOOKS_ENABLED', true);
   cfg.personal = {
     blockAiTrailers: boolOption('BLOCK_AI_TRAILERS', true),
@@ -83,7 +89,8 @@ function loadConfig(cwd) {
 }
 
 function enabled(cfg, check) {
+  if (cfg.profile === 'minimal' && MINIMAL_OFF.has(check)) return false;
   return !cfg.hooksOff && !cfg.disabled.has(check);
 }
 
-module.exports = { DEFAULTS, git, projectRoot, sharedRoot, loadConfig, enabled, readJson };
+module.exports = { PROFILES, DEFAULTS, git, projectRoot, sharedRoot, loadConfig, enabled, readJson };

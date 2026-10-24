@@ -28,7 +28,7 @@ function main() {
   if (verdict.level === 'ok') process.exit(0);
   const sum = B.summary(state, limits);
   const tail = ` (started ${sum.total}, running ${sum.active}, ~${Math.round(sum.estTokens / 1000)}k tokens estimated). Tell the user before spawning more: \`node .agents/tools/budget.js status\`.`;
-  respondPreToolUse([{ level: verdict.level === 'ask' ? 'ask' : 'warn', check: 'agent-budget', reason: verdict.messages.join(' ') + tail }]);
+  respondPreToolUse([{ level: verdict.level === 'ask' || cfg.profile === 'strict' ? 'ask' : 'warn', check: 'agent-budget', reason: verdict.messages.join(' ') + tail }]);
 }
 
 if (require.main === module) {

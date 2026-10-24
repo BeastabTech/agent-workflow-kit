@@ -22,6 +22,7 @@
 | `limits.tokenBudget` | `0` | Estimated tokens for all sub-agents; `0` means no limit |
 | `limits.maxPromptChars` | `6000` | Brief size that triggers a "point to files instead" warning |
 | `limits.maxFixRounds` | `2` | Fix rounds for the closer and reviewers (rule text only) |
+| `profile` | `standard` | `minimal`, `standard` or `strict` (see below) |
 | `tools` | all | Which agent adapters `init` wrote |
 
 Without `.agents/config.json`, only the personal checks run (trailers, secrets, force push, destructive DB). Staging and protected-branch checks need the team file.
@@ -37,6 +38,7 @@ Set when enabling the plugin (stored in your own Claude Code settings, not the r
 | `secret_scan` | `true` | Secret scan on commit and write |
 | `destructive_db_guard` | `true` | Destructive DB command guard |
 | `reply_style` | `normal` | `normal`, `caveman-lite`, `caveman-full` |
+| `profile` | `standard` | Hook profile: `minimal`, `standard`, `strict` |
 
 ## Environment variables
 
@@ -44,8 +46,19 @@ Set when enabling the plugin (stored in your own Claude Code settings, not the r
 |---|---|
 | `AWK_HOOKS=off` | Turn every kit hook and the git guard off for this shell |
 | `AWK_DISABLE=a,b` | Turn off named checks: `ai-trailers`, `secret-scan`, `explicit-staging`, `force-push`, `protected-branch`, `destructive-db`, `protected-files`, `env-files`, `agent-budget` |
+| `AWK_PROFILE=minimal\|standard\|strict` | Hook profile for this shell. Order: this variable, the plugin option, `profile` in `.agents/config.json`, then `standard` |
 | `AWK_SHARED_DIR=/path` | Message log and state folder override |
 
 ## Token and compaction settings
 
 `init` writes `.claude/settings.json` with `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=75` (compact a bit earlier than the default). It can only lower the threshold and its behaviour may vary by version. `AGENTS.md` carries the "Save tokens" and "Compact instructions" sections that every tool reads.
+
+## Hook profiles
+
+| Profile | What changes |
+|---|---|
+| `minimal` | Only the clear safety nets run: `ai-trailers`, `secret-scan`, `force-push`, `destructive-db`. Off: `explicit-staging`, `protected-branch`, `protected-files`, `env-files`, `agent-budget` |
+| `standard` | Everything described in [HOOKS.md](HOOKS.md) (default) |
+| `strict` | Standard, plus: `git add -A` and `commit -a` are denied in worktree mode too; a value that only looks like a secret is denied instead of asked; every spawn-budget warning becomes a question to you |
+
+An unknown value falls back to `standard`. `AWK_HOOKS=off` and `AWK_DISABLE` still win over any profile.

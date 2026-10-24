@@ -126,7 +126,7 @@ function checkSecrets(cmd, cwd, cfg) {
   if (block.length) {
     out.push({ level: 'deny', check: 'secret-scan', reason: `Possible secret in the commit: ${block.slice(0, 5).map(fmt).join('; ')}. Move it to env/secret storage. False positive: add "awk-allow-secret" on that line or the path to secretScan.allowPaths.` });
   } else if (ask.length) {
-    out.push({ level: 'ask', check: 'secret-scan', reason: `Value that looks like a secret: ${ask.slice(0, 5).map(fmt).join('; ')}. Confirm it is not a real credential.` });
+    out.push({ level: cfg.profile === 'strict' ? 'deny' : 'ask', check: 'secret-scan', reason: `Value that looks like a secret: ${ask.slice(0, 5).map(fmt).join('; ')}. Confirm it is not a real credential.` });
   }
   return out;
 }
@@ -142,7 +142,7 @@ function checkStaging(cmd, cfg) {
     return c !== -1 && t.slice(c + 1).some((a) => /^-[a-zA-Z]*a[a-zA-Z]*$/.test(a) || a === '--all');
   });
   if (!broad) return [];
-  const level = cfg.workMode === 'shared' ? 'deny' : 'warn';
+  const level = cfg.workMode === 'shared' || cfg.profile === 'strict' ? 'deny' : 'warn';
   return [{ level, check: 'explicit-staging', reason: 'Stage explicit paths only (git add <file> ...). Other agents may have unfinished work in this checkout. Check `git diff --cached --stat` before committing.' }];
 }
 

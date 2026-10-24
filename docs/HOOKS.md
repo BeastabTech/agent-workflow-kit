@@ -11,6 +11,10 @@ All hooks are plain Node.js with no dependencies. They **fail open**: broken inp
 | Session note | SessionStart | `scripts/hooks/session-start.js` |
 | Git guard (any tool) | git `pre-commit`, `commit-msg` | `scripts/git-guard.js` (copied to `.agents/tools/`) |
 
+## Profiles
+
+`minimal`, `standard` (default) and `strict` change which checks run and how hard they stop; see [CONFIG.md](CONFIG.md#hook-profiles).
+
 ## Checks
 
 | Check | Trigger | Decision | Needs team config |

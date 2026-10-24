@@ -46,6 +46,8 @@ Do not ask about what you can decide. Do not fix what needs a decision. When uns
 
 Re-run the checks for everything you touched, then run step 2 on your own changes. Two fix rounds at most.
 
+If a cause was non-obvious or the same mistake showed up twice, record it with the `lessons` skill.
+
 ## 6. Report to the manager
 
 Use `templates/closeout-report.md`:

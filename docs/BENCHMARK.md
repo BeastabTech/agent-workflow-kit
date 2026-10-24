@@ -11,6 +11,11 @@ The kit costs context (see "Measured impact" in the README) and claims to save r
 | Was the output better? | you, with a rubric | only as good as the rubric; needs several runs |
 | Is it faster or cheaper overall? | wall time + `session-stats.js` totals | one run is noise; use at least 3 per arm |
 
+## Results so far
+
+- [Delegation on a small search](benchmarks/delegation-small-search.md): the sub-agent cost about 6.7 times the tokens and 4 times the time, with no main-context saving. Harness: `node scripts/bench-delegation.js --repo <dir>` (spends real tokens).
+- Plugin evals (`claude plugin eval`): `closeout-fires` with the kit 1.00, without 0.00. Summary in the README.
+
 ## Protocol (A/B on one task)
 
 1. Pick a task with a clear finish line (a feature with acceptance criteria, or a bug with a known cause). Write the acceptance criteria down before you start.

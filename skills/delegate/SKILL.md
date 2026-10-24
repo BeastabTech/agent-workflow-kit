@@ -14,7 +14,7 @@ A sub-agent has its own context window. What you gain: your context stays small.
 - A side job would flood your context with output (long test logs, big diffs).
 
 ## Do it yourself when
-- It is 1-3 tool calls, or a file you already know.
+- It is 1-3 tool calls, or a file you already know. A search that `git grep` answers in one or two calls is yours: in a measured small search, a sub-agent cost about 6.7 times the tokens and 4 times the time with no main-context saving (docs/benchmarks/delegation-small-search.md).
 - It needs the context you already hold (a decision you just made, a file you just read).
 - It touches the same files as another running agent.
 - The brief would be as long as the work.

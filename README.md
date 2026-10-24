@@ -95,7 +95,7 @@ More: [docs/FLOW.md](docs/FLOW.md).
 
 | Area | Skills |
 |---|---|
-| Setup and memory | `init`, `docs-sync`, `context-budget`, `caveman` |
+| Setup and memory | `init`, `docs-sync`, `context-budget`, `lessons`, `caveman` |
 | Several agents | `manager`, `state-keeper`, `agent-comms`, `handoff`, `peer-review`, `team-message`, `team-status` |
 | Everyday engineering | `plan`, `tdd`, `debug`, `bug-intake`, `safe-change`, `self-review`, `closeout`, `git-workflow` |
 | Low-context delegation | `delegate` |
@@ -163,21 +163,44 @@ Personal plugin options are set when you enable the plugin: `hooks_enabled`, `bl
 
 ## Measured impact
 
-What the kit costs and what it saves, measured on the real files with `npm run stats` (tokens are characters / 4, so estimates):
+Real numbers from real runs, including the ones that do not flatter the kit. Method and raw data: [docs/BENCHMARK.md](docs/BENCHMARK.md).
+
+**1. What the kit costs every session** (`npm run stats`, tokens = characters / 4, so estimates)
 
 | Measure | Tokens (est.) |
 |---|---|
-| Always loaded: 36 skill + 9 agent descriptions | ~4.1k |
+| Always loaded: 37 skill + 9 agent descriptions | ~4.2k |
 | One skill body, loaded only when used (average / largest) | ~0.5k / ~1.0k |
 | `AGENTS.md` index in a new project | ~1.0k |
 | Cold start, index + the largest single context doc | ~1.9k |
 | Cold start, reading all 8 context docs and rules instead | ~4.8k |
 | Cold start saved by reading the index first (worst case) | 61% |
 
-How to read this, honestly:
-- **The kit is not free.** About 4k tokens of skill and agent descriptions sit in every session. It pays for itself when work is long, split across agents, or resumed after a reset.
-- **The index saving is real but small on a fresh project** (template docs are short). It grows with your docs, because an agent opens only the doc its task needs.
-- **Sub-agent and quality effects are not measured here.** Splitting work moves tokens out of the main context (the manager stays small) but total tokens usually go up, not down. Whether output is better depends on the task. The method to measure both on your own work, with real numbers from the session transcripts, is in [docs/BENCHMARK.md](docs/BENCHMARK.md) (`node scripts/session-stats.js --latest`). Results from real runs are welcome as pull requests or issues.
+**2. Does delegating to a sub-agent help? On a small search, no** ([details](docs/benchmarks/delegation-small-search.md); median of 3 runs per arm, sonnet, numbers from session transcripts)
+
+| | No sub-agent | `explorer` sub-agent |
+|---|---|---|
+| Main conversation, peak context | 32.5k | 31.9k |
+| Total fresh tokens | 9.4k | 63.4k |
+| Wall time | 19 s | 78 s |
+| Cost | $0.07 | $0.21 |
+| Answer score (of 8) | 8, 8, 8 | 8, 7, 8 |
+
+The search was small enough for `git grep`, so the main context never filled and delegation only added cost. The `delegate` skill now tells agents to do such searches themselves. Delegation is meant for searches that read many files and for independent parallel work; no run of that kind is measured yet, and it is the most useful result a contributor could add.
+
+**3. Does a skill change behaviour?** (`claude plugin eval`, with the plugin vs without, 3 judge votes, 1 run)
+
+| Case | With kit | Without | Difference |
+|---|---|---|---|
+| `closeout-fires`: "workers are done, what before I tell the user?" | 1.00 (skill fired) | 0.00 | **+1.00** |
+| `delegate-fires` (first, easier grader) | 1.00 (skill fired) | 1.00 | 0.00; the grader has since been tightened and not re-run |
+
+**4. What a long session looks like.** One long working session of this repo, no sub-agents: 71 turns, main context peaked at 206.6k tokens, 390k fresh tokens in total. The small search above peaked at 32k. This is one session, not a comparison; it is why splitting and hand-offs exist, and why `context-budget` tells agents to write a hand-off at about two thirds full.
+
+**Read this honestly**
+- The kit is not free: about 4k tokens of descriptions sit in every session. It pays off when work is long, split across agents, or resumed after a reset.
+- Splitting work moves tokens out of the main context but total tokens usually go up, and small tasks are cheaper and faster without it.
+- Output quality in general is not measured; two small results above are all there is. Run your own with `node scripts/session-stats.js --latest` and `node scripts/bench-delegation.js --repo <dir>`, and share results through the "Benchmark result" issue template.
 
 ---
 

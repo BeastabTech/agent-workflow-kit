@@ -135,3 +135,30 @@ test('session-start: reply style option', () => {
   const r = runHook('session-start', { cwd: dir }, { CLAUDE_PLUGIN_OPTION_REPLY_STYLE: 'caveman-lite' });
   assert.match(r.json.hookSpecificOutput.additionalContext, /terse/);
 });
+
+test('profiles: minimal skips the soft checks, strict hardens them, unknown falls back to standard', () => {
+  const shared = tmpRepo({ workMode: 'worktree', protectedFiles: ['src/auth/**'] });
+  const stage = (env) => decision(bash(shared.dir, 'git add -A', env));
+  assert.equal(stage({}), 'warn'); // standard, worktree
+  assert.equal(stage({ AWK_PROFILE: 'strict' }), 'deny');
+  assert.equal(stage({ AWK_PROFILE: 'minimal' }), 'allow');
+  assert.equal(stage({ AWK_PROFILE: 'nonsense' }), 'warn');
+  assert.equal(decision(bash(shared.dir, 'git push --force', { AWK_PROFILE: 'minimal' })), 'deny'); // safety nets stay
+  assert.equal(decision(edit(shared.dir, path.join(shared.dir, 'src/auth/x.js'), 'x')), 'ask');
+  assert.equal(decision(edit(shared.dir, path.join(shared.dir, 'src/auth/x.js'), 'x', { AWK_PROFILE: 'minimal' })), 'allow');
+  assert.equal(decision(edit(shared.dir, path.join(shared.dir, '.env'), 'A=1', { AWK_PROFILE: 'minimal' })), 'allow');
+  const viaOption = decision(edit(shared.dir, path.join(shared.dir, '.env'), 'A=1', { CLAUDE_PLUGIN_OPTION_PROFILE: 'minimal' }));
+  assert.equal(viaOption, 'allow');
+  const viaConfig = tmpRepo({ profile: 'minimal', protectedFiles: ['a/**'] });
+  assert.equal(decision(edit(viaConfig.dir, path.join(viaConfig.dir, 'a/x.js'), 'x')), 'allow');
+  assert.equal(decision(edit(viaConfig.dir, path.join(viaConfig.dir, 'a/x.js'), 'x', { AWK_PROFILE: 'standard' })), 'ask'); // env beats config
+});
+
+test('profiles: strict turns a spawn-budget warning into a question', () => {
+  const { dir } = tmpRepo({ limits: { maxSpawns: 4, maxParallel: 10 } });
+  const spawn = (env) => runHook('pre-agent', { session_id: 'p', cwd: dir, tool_input: { description: 'd', prompt: 'x' + Math.random() } }, env);
+  spawn({});
+  spawn({});
+  assert.equal(decision(spawn({})), 'warn');
+  assert.equal(decision(spawn({ AWK_PROFILE: 'strict' })), 'ask');
+});

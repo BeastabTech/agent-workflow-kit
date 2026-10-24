@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Hook profiles `minimal` / `standard` / `strict` (`AWK_PROFILE`, plugin option `profile`, `profile` in `.agents/config.json`).
+- `lessons` skill: record non-obvious causes in the right doc, without duplicates, and promote to a rule only when it recurs.
+- Measured results in the README: a delegation micro-benchmark (the sub-agent cost about 6.7 times the tokens on a small search, no main-context saving), plugin eval results, and the always-loaded cost. `scripts/bench-delegation.js` reruns it; raw data in `docs/benchmarks/`. The `delegate` skill now tells agents to do `git grep`-sized searches themselves.
+- CI actions moved to v7 (Node 24 runtime).
+- Evals: the delegate and closeout graders now check kit-specific behaviour, so the with/without difference means something.
 - Spawn budget: `limits` in `.agents/config.json`, a PreToolUse hook on the `Agent` tool that counts sub-agents, warns near a limit and asks the user when one would be crossed, a SubagentStop hook, and `budget.js plan|status|limits` for managers to check a plan before spawning. Verified end to end in Claude Code.
 - New agents: `planner`, `test-writer`, `build-fixer`, `doc-updater`. New skills: `delegate` (small briefs, small reports, when not to spawn), `team-status`.
 - Talking to the team: `msg.js roster`, an `instruction` message type (never an approval), and manager rules for relaying a user's instruction to any worker or stepping into a worker session.
