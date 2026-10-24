@@ -42,7 +42,7 @@ Wait for answers. Do not write anything before.
    node "${CLAUDE_PLUGIN_ROOT}/scripts/export-skills.js" --target <dir> --to agents     # only if the owner said yes to exporting skills
    ```
    With git hooks, tell the owner to turn them on themselves (it changes git config): `git config core.hooksPath .githooks`.
-3. For every file reported as `kept` (already existed), show the owner the useful parts of the template and merge by hand only with their OK. An existing `CLAUDE.md` gets one line: `@AGENTS.md`.
+3. For every file reported as `kept` (already existed), show the owner the useful parts of the template and merge by hand only with their OK. An existing `CLAUDE.md` gets one line: `@AGENTS.md`. Files reported as `existing` were skipped because the project already has that doc under another path (for example `docs/core/architecture.md`). The generated links point there instead. Tell the owner which ones.
 4. Fill `docs/context/ARCHITECTURE.md` from what you read in step 1 (short, no secrets, no infra ids).
 
 ## 4. Check and report

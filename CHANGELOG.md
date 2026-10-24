@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- `init` no longer adds a second copy of a doc the project already keeps elsewhere (matched by file name, any case). It links to the existing one and lists it under `existing`.
+- `msg.js post` prints `posted: <header>` so it is not mistaken for a second copy of the message.
+
 ## 0.1.0
 
 First release.

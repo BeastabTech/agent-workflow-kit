@@ -150,3 +150,33 @@ test('git hooks work in a real commit', () => {
   assert.notEqual(spawnSync('git', ['commit', '-qm', 'feat: k', '-m', 'Co-' + 'Authored-By: a <a@example.com>'], { cwd: dir, env }).status, 0);
   assert.equal(spawnSync('git', ['commit', '-qm', 'feat: k'], { cwd: dir, env }).status, 0);
 });
+
+test('init: an existing doc elsewhere is linked, not duplicated', () => {
+  const { dir } = tmpRepo();
+  fs.mkdirSync(path.join(dir, 'docs/context/core'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'docs/context/core/architecture.md'), '# Ours\n');
+  fs.writeFileSync(path.join(dir, 'docs/TESTING.md'), '# Ours\n');
+  const r = init({ target: dir, tools: 'claude' });
+  assert.ok(!fs.existsSync(path.join(dir, 'docs/context/ARCHITECTURE.md')));
+  assert.ok(!fs.existsSync(path.join(dir, 'docs/context/TESTING.md')));
+  const byFile = (a, b) => a.file.localeCompare(b.file);
+  assert.deepEqual([...r.existing].sort(byFile), [
+    { file: 'docs/context/ARCHITECTURE.md', found: 'docs/context/core/architecture.md' },
+    { file: 'docs/context/TESTING.md', found: 'docs/TESTING.md' },
+  ]);
+  const agents = fs.readFileSync(path.join(dir, 'AGENTS.md'), 'utf8');
+  assert.match(agents, /`docs\/context\/core\/architecture\.md`/);
+  assert.doesNotMatch(agents, /docs\/context\/ARCHITECTURE\.md/);
+  assert.doesNotMatch(agents, /docs\/docs\//);
+  assert.ok(fs.existsSync(path.join(dir, 'docs/context/CONVENTIONS.md')), 'other docs are still written');
+});
+
+test('message log: post prints a confirmation, not a second copy of the header', () => {
+  const { dir } = tmpRepo();
+  init({ target: dir, tools: 'claude' });
+  const run = (args) => execFileSync('node', [path.join(dir, '.agents/tools/msg.js'), ...args], { cwd: dir, encoding: 'utf8', env: { ...process.env, AWK_SHARED_DIR: '' } });
+  const posted = run(['post', '--from', 'a', '--to', 'b', '--type', 'note', '--topic', 't', '--body', 'x']);
+  assert.match(posted, /^posted: \S+ · from a · to b · note\n$/);
+  const tail = run(['tail', '-n', '1']);
+  assert.equal(tail.match(/^### /gm).length, 1);
+});

@@ -131,6 +131,32 @@ function walk(dir, base = dir) {
   return out;
 }
 
+// A project may already keep a doc under another path (docs/core/architecture.md). Find it by
+// file name, any case, in the repo root or docs/, so init links to it instead of adding a twin.
+function findExistingDoc(target, rel) {
+  const name = path.basename(rel).toLowerCase();
+  const skip = new Set(['node_modules', '.git', 'vendor', 'dist', 'build']);
+  const search = (dir, depth) => {
+    let entries = [];
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch (_) {
+      return null;
+    }
+    for (const e of entries) if (e.isFile() && e.name.toLowerCase() === name) return path.join(dir, e.name);
+    if (depth === 0) return null;
+    for (const e of entries) {
+      if (!e.isDirectory() || skip.has(e.name)) continue;
+      const hit = search(path.join(dir, e.name), depth - 1);
+      if (hit) return hit;
+    }
+    return null;
+  };
+  const rootHit = search(target, 0);
+  const hit = rootHit || search(path.join(target, 'docs'), 4);
+  return hit ? path.relative(target, hit).split(path.sep).join('/') : null;
+}
+
 function ensureGitignore(target, lines, dry) {
   const file = path.join(target, '.gitignore');
   let text = '';
@@ -150,7 +176,7 @@ function init(opts) {
   const n = normalise(raw);
   const v = vars(n);
   const dry = Boolean(opts['dry-run']);
-  const report = { target, written: [], kept: [], gitignore: [] };
+  const report = { target, written: [], kept: [], existing: [], gitignore: [] };
 
   if (opts.tools) n.tools = list(opts.tools, TOOLS).filter((t) => TOOLS.includes(t));
   if (opts['with-git-hooks']) n.gitHooks = true;
@@ -166,16 +192,34 @@ function init(opts) {
     sources.push([path.join(KIT, 'scripts', 'lib', 'secrets.js'), '.agents/tools/lib/secrets.js']);
   }
 
+  const links = [];
+  for (const [, rel] of sources) {
+    const out = rel.replace(/\.tmpl$/, '');
+    if (!/^docs\/context\/[^/]+\.md$/.test(out) || /README\.md$/i.test(out)) continue;
+    const found = findExistingDoc(target, out);
+    if (found && found.toLowerCase() !== out.toLowerCase()) {
+      report.existing.push({ file: out, found });
+      links.push([out, found]);
+    }
+  }
+  const relink = (text) =>
+    links.reduce((t, [from, to]) => {
+      const name = path.basename(from).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return t.replace(new RegExp(`(?<![\\w/.-])(?:docs/context/)?${name}`, 'g'), to);
+    }, text);
+
   for (const [src, rel] of sources) {
     const dest = path.join(target, rel.replace(/\.tmpl$/, ''));
     const relOut = path.relative(target, dest);
+    if (links.some(([from]) => from === relOut.split(path.sep).join('/'))) continue;
     if (fs.existsSync(dest) && !opts.force) {
       report.kept.push(relOut);
       continue;
     }
     if (!dry) {
       fs.mkdirSync(path.dirname(dest), { recursive: true });
-      fs.writeFileSync(dest, render(fs.readFileSync(src, 'utf8'), v));
+      const text = render(fs.readFileSync(src, 'utf8'), v);
+      fs.writeFileSync(dest, /\.(md|mdc|toml)$/.test(dest) ? relink(text) : text);
     }
     report.written.push(relOut);
   }

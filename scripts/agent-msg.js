@@ -149,7 +149,7 @@ function main() {
   const print = (list) => process.stdout.write(list.length ? list.map((m) => m.raw).join('\n\n') + '\n' : '(none)\n');
   switch (cmd) {
     case 'post':
-      process.stdout.write(post(dir, a) + '\n');
+      process.stdout.write(`posted: ${post(dir, a).replace(/^### /, '')}\n`);
       break;
     case 'inbox':
       print(inbox(dir, a));
