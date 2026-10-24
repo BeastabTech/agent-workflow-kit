@@ -12,7 +12,7 @@ const FAKE = {
 };
 
 function tmpRepo(config) {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'awk-test-')));
+  const dir = (fs.realpathSync.native || fs.realpathSync)(fs.mkdtempSync(path.join(os.tmpdir(), 'awk-test-')));
   const g = (...a) => execFileSync('git', a, { cwd: dir, stdio: 'ignore' });
   g('init', '-q', '-b', 'feature');
   g('config', 'user.email', 'dev@example.com');

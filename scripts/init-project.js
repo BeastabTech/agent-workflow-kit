@@ -128,7 +128,7 @@ function walk(dir, base = dir) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, e.name);
     if (e.isDirectory()) out.push(...walk(full, base));
-    else out.push(path.relative(base, full));
+    else out.push(path.relative(base, full).split(path.sep).join('/'));
   }
   return out;
 }
@@ -215,8 +215,8 @@ function init(opts) {
 
   for (const [src, rel] of sources) {
     const dest = path.join(target, rel.replace(/\.tmpl$/, ''));
-    const relOut = path.relative(target, dest);
-    if (links.some(([from]) => from === relOut.split(path.sep).join('/'))) continue;
+    const relOut = path.relative(target, dest).split(path.sep).join('/');
+    if (links.some(([from]) => from === relOut)) continue;
     if (fs.existsSync(dest) && !opts.force) {
       report.kept.push(relOut);
       continue;

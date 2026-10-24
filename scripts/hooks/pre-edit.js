@@ -22,15 +22,19 @@ function newContent(ti) {
 /** git reports the real root (/private/var), the tool may pass a symlinked path (/var): compare real paths. */
 function realPath(p) {
   const real = fs.realpathSync.native || fs.realpathSync;
-  try {
-    return real(p);
-  } catch (_) {
+  const tail = [];
+  let cur = p;
+  for (let i = 0; i < 64; i++) {
     try {
-      return path.join(real(path.dirname(p)), path.basename(p));
+      return path.join(real(cur), ...tail.reverse());
     } catch (_) {
-      return p;
+      const parent = path.dirname(cur);
+      if (parent === cur) return p;
+      tail.push(path.basename(cur));
+      cur = parent;
     }
   }
+  return p;
 }
 
 function main() {

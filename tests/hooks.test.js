@@ -113,6 +113,7 @@ test('pre-edit: protected file asks even when the tool passes a symlinked path',
   fs.symlinkSync(dir, link, 'junction');
   try {
     assert.equal(decision(edit(link, path.join(link, 'src/auth/token.js'), 'x')), 'ask');
+    assert.equal(decision(edit(link, path.join(link, 'src/auth/not/yet/created.js'), 'x')), 'ask'); // parent dirs missing
   } finally {
     fs.unlinkSync(link);
   }
