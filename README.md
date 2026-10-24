@@ -193,7 +193,9 @@ The search was small enough for `git grep`, so the main context never filled and
 | Case | With kit | Without | Difference |
 |---|---|---|---|
 | `closeout-fires`: "workers are done, what before I tell the user?" | 1.00 (skill fired) | 0.00 | **+1.00** |
-| `delegate-fires` (first, easier grader) | 1.00 (skill fired) | 1.00 | 0.00; the grader has since been tightened and not re-run |
+| `delegate-fires`: split a search plus three parallel edits | 1.00 (skill fired; judge votes 2 of 3 pass) | 0.00 | **+1.00** |
+
+Earlier runs of the same case did not count: with the first, easier grader both arms passed (difference 0.00), and after the grader was tightened both arms failed until the skill's limit check was moved to the top. One run per case, so treat the size of the gap as indicative.
 
 **4. What a long session looks like.** One long working session of this repo, no sub-agents: 71 turns, main context peaked at 206.6k tokens, 390k fresh tokens in total. The small search above peaked at 32k. This is one session, not a comparison; it is why splitting and hand-offs exist, and why `context-budget` tells agents to write a hand-off at about two thirds full.
 
