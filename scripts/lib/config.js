@@ -1,0 +1,88 @@
+'use strict';
+/**
+ * Loads the kit settings for a project.
+ * Team settings come from <project>/.agents/config.json (committed).
+ * Personal settings come from the plugin options (CLAUDE_PLUGIN_OPTION_*).
+ * Env switches: AWK_HOOKS=off disables every hook; AWK_DISABLE=check1,check2 disables single checks.
+ */
+const fs = require('fs');
+const path = require('path');
+const { execFileSync } = require('child_process');
+
+const DEFAULTS = {
+  version: 1,
+  workMode: 'shared',
+  stateSync: 'git',
+  sharedDir: null,
+  baseBranch: 'main',
+  protectedBranches: ['main', 'master', 'production', 'prod', 'release'],
+  protectedFiles: [],
+  commitPolicy: 'on-request',
+  staging: 'explicit',
+  destructiveDb: 'deny',
+  secretScan: { allowPaths: [] },
+  commands: {},
+};
+
+function git(args, cwd) {
+  try {
+    return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 8000 }).trim();
+  } catch (_) {
+    return '';
+  }
+}
+
+function projectRoot(cwd) {
+  return git(['rev-parse', '--show-toplevel'], cwd) || cwd;
+}
+
+/** Root of the main checkout, so every worktree shares one .agents folder. */
+function sharedRoot(cwd) {
+  const common = git(['rev-parse', '--path-format=absolute', '--git-common-dir'], cwd);
+  if (common && path.basename(common) === '.git') return path.dirname(common);
+  return projectRoot(cwd);
+}
+
+function readJson(file) {
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (_) {
+    return null;
+  }
+}
+
+function boolOption(name, fallback) {
+  const raw = process.env[`CLAUDE_PLUGIN_OPTION_${name}`];
+  if (raw === undefined || raw === '') return fallback;
+  return !/^(false|0|no|off)$/i.test(String(raw).trim());
+}
+
+function loadConfig(cwd) {
+  const root = projectRoot(cwd);
+  const file = path.join(root, '.agents', 'config.json');
+  const team = readJson(file);
+  const cfg = { ...DEFAULTS, ...(team || {}) };
+  cfg.secretScan = { ...DEFAULTS.secretScan, ...((team && team.secretScan) || {}) };
+  cfg.root = root;
+  cfg.hasTeamConfig = Boolean(team);
+  cfg.disabled = new Set(
+    String(process.env.AWK_DISABLE || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
+  cfg.hooksOff = /^(off|false|0)$/i.test(String(process.env.AWK_HOOKS || '')) || !boolOption('HOOKS_ENABLED', true);
+  cfg.personal = {
+    blockAiTrailers: boolOption('BLOCK_AI_TRAILERS', true),
+    secretScan: boolOption('SECRET_SCAN', true),
+    destructiveDbGuard: boolOption('DESTRUCTIVE_DB_GUARD', true),
+    replyStyle: String(process.env.CLAUDE_PLUGIN_OPTION_REPLY_STYLE || 'normal').trim().toLowerCase(),
+  };
+  return cfg;
+}
+
+function enabled(cfg, check) {
+  return !cfg.hooksOff && !cfg.disabled.has(check);
+}
+
+module.exports = { DEFAULTS, git, projectRoot, sharedRoot, loadConfig, enabled, readJson };

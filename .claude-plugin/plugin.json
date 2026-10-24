@@ -1,0 +1,46 @@
+{
+  "name": "agent-workflow-kit",
+  "displayName": "Agent Workflow Kit",
+  "version": "0.1.0",
+  "description": "A team workflow for coding agents: short project memory, rules, safe-change and self-review checklists, manager/worker orchestration with a state owner, agent-to-agent messaging, hand-off and resume, bug intake, team hand-off messages, cloud ops, and safety hooks.",
+  "author": {
+    "name": "BeastabTech",
+    "url": "https://github.com/BeastabTech"
+  },
+  "homepage": "https://github.com/BeastabTech/agent-workflow-kit",
+  "repository": "https://github.com/BeastabTech/agent-workflow-kit",
+  "license": "MIT",
+  "keywords": ["workflow", "multi-agent", "orchestration", "agents-md", "hooks", "code-review", "safe-change", "handoff", "bug-intake", "tdd"],
+  "userConfig": {
+    "hooks_enabled": {
+      "type": "boolean",
+      "title": "Enable safety hooks",
+      "description": "Run the kit's commit, secret, protected-file and database guards. Turn off to keep only the skills.",
+      "default": true
+    },
+    "block_ai_trailers": {
+      "type": "boolean",
+      "title": "Block AI attribution trailers",
+      "description": "Refuse git commits whose message has a Co-Authored-By trailer or a 'Generated with' line.",
+      "default": true
+    },
+    "secret_scan": {
+      "type": "boolean",
+      "title": "Scan for secrets",
+      "description": "Scan staged changes before git commit, and file content before writes, for clear credential patterns.",
+      "default": true
+    },
+    "destructive_db_guard": {
+      "type": "boolean",
+      "title": "Block destructive database commands",
+      "description": "Refuse commands such as migrate reset, db push, DROP, TRUNCATE and DELETE without WHERE.",
+      "default": true
+    },
+    "reply_style": {
+      "type": "string",
+      "title": "Reply style",
+      "description": "Personal reply style for every session: normal, caveman-lite or caveman-full.",
+      "default": "normal"
+    }
+  }
+}
