@@ -1,0 +1,12 @@
+Agent Workflow Kit
+Copyright (c) 2026 BeastabTech. Licensed under the MIT License (see LICENSE).
+
+Acknowledgements
+
+- skills/caveman: an independent rewrite inspired by the "caveman" skill by
+  Julius Brussee (MIT License). No text was copied.
+- Several workflow ideas (hook profiles, per-check off switches, reviewer and
+  explorer agents) were inspired by the open-source "Everything Claude Code"
+  collection. No code was copied.
+- AGENTS.md follows the open AGENTS.md convention; skills follow the open
+  SKILL.md (Agent Skills) format.
