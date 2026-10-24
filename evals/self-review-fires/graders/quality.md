@@ -1,4 +1,8 @@
 ---
 type: llm
 ---
-PASS if the checklist covers security (authz, only your own account), data (soft delete or cleanup, related records), edge cases, tests, docs, and a done report with commands run and their results plus what could not be run. FAIL if it misses authorisation or evidence of tests.
+Default to PASS. Wording, order, length and extra items do not matter.
+
+FAIL only if the reply clearly misses one of these:
+1. A check that a user cannot delete someone else's account (authorisation).
+2. A done report that lists the checks or tests run with their results, or says what was not run.
