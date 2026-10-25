@@ -176,17 +176,19 @@ test('done gate: blocks a stop after code edits without tests, once, per edition
   const blocked = (r) => /"decision":"block"/.test(r.stdout || r);
 
   write(use('1', 'Edit', { file_path: '/p/src/a.ts' }));
-  assert.ok(blocked(stop({ AWK_PRESET: 'normal' }, 's1')), 'edit without a test run blocks');
-  assert.ok(!blocked(stop({ AWK_PRESET: 'normal' }, 's1')), 'second stop is allowed (once per session)');
+  assert.ok(blocked(stop({ AWK_PRESET: 'best' }, 's1')), 'edit without a test run blocks');
+  assert.ok(blocked(stop({ AWK_PRESET: 'best' }, 's1')), 'best blocks up to twice');
+  assert.ok(!blocked(stop({ AWK_PRESET: 'best' }, 's1')), 'third stop is allowed: capped per session');
   assert.ok(!blocked(stop({ AWK_PRESET: 'lite' }, 's2')), 'lite never blocks');
-  assert.ok(!blocked(stop({ AWK_PRESET: 'normal', AWK_DISABLE: 'done-gate' }, 's3')));
+  assert.ok(!blocked(stop({ AWK_PRESET: 'normal' }, 's2b')), 'normal and auto do not gate: it cost tokens without a measured gain');
+  assert.ok(!blocked(stop({ AWK_PRESET: 'best', AWK_DISABLE: 'done-gate' }, 's3')));
 
   write(use('1', 'Edit', { file_path: '/p/src/a.ts' }), use('2', 'Bash', { command: 'cd apps/x && npx jest src/a' }), res('2', 'Tests: 3 passed, 3 total'));
   assert.ok(!blocked(stop({ AWK_PRESET: 'normal' }, 's4')), 'tests ran and passed');
   assert.ok(blocked(stop({ AWK_PRESET: 'best' }, 's5')), 'best also wants a test file touched');
 
   write(use('1', 'Edit', { file_path: '/p/src/a.ts' }), use('2', 'Write', { file_path: '/p/src/a.spec.ts' }), use('3', 'Bash', { command: 'npx jest' }), res('3', 'Tests: 1 failed, 2 passed, 3 total'));
-  assert.ok(blocked(stop({ AWK_PRESET: 'normal' }, 's6')), 'a failing last run blocks');
+  assert.ok(blocked(stop({ AWK_PRESET: 'best' }, 's6')), 'a failing last run blocks');
 
   write(use('1', 'Edit', { file_path: '/p/README.md' }));
   assert.ok(!blocked(stop({ AWK_PRESET: 'best' }, 's7')), 'docs only: nothing to test');

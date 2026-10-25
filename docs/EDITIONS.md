@@ -8,7 +8,7 @@ One choice at install time sets how much the kit does. Pick the edition that mat
 | `low-tokens` | Cutting cost; long sessions on a budget | `standard` | 9 core (exported, no plugin) | solo; at most 2 agents even on a big problem | caveman-lite |
 | `normal` | Default | `standard` | all (plugin) | by problem size | normal |
 | `auto` | Let the kit decide per task | `standard` | all (plugin) | sized per task: small work like low-tokens, medium like normal, big or risky like best | normal |
-| `best` | Work you want reviewed hard | `strict` | all (plugin) | by problem size, plus independent review and closeout | normal |
+| `best` | Work you want reviewed hard | `strict` | all (plugin) | by problem size, plus done gate, independent review and closeout | normal |
 
 ## How to choose
 

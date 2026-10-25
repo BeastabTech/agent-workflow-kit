@@ -16,7 +16,7 @@ const PRESETS = {
     limits: {},
     skills: null,
     compact: false,
-    gate: { tests: true, addTests: false, maxBlocks: 1 },
+    gate: { tests: false, addTests: false, maxBlocks: 0 },
     directive:
       'Preset auto: before non-trivial work, run `node .agents/tools/budget.js triage --task "<the request in one or two lines>"` (or the manager skill) and follow its mode, model tier and review. Small tasks stay solo and short; big or risky ones earn agents, a stronger model and an independent review. Repeating work (fix until green, review and fix, watch) goes through the loop skill with its hard stop.',
   },
@@ -39,7 +39,7 @@ const PRESETS = {
     limits: { maxParallel: 1, maxSpawns: 2, smallRepoFiles: 100000 },
     skills: LEAN_SKILLS,
     compact: true,
-    gate: { tests: true, addTests: false, maxBlocks: 1 },
+    gate: { tests: false, addTests: false, maxBlocks: 0 },
     directive:
       'Preset low-tokens: spend as few tokens as the task allows. Do the work yourself; use a sub-agent only for a search that would read dozens of files. Read file ranges, not whole files; filter long output. Keep replies and Done reports to a few lines with evidence. Never trade away a safety check to save tokens.',
   },
@@ -51,7 +51,7 @@ const PRESETS = {
     limits: {},
     skills: null,
     compact: false,
-    gate: { tests: true, addTests: false, maxBlocks: 1 },
+    gate: { tests: false, addTests: false, maxBlocks: 0 },
     directive: '', // the manager, delegate and self-review skills already carry the normal behaviour
   },
   best: {

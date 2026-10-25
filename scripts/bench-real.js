@@ -82,6 +82,8 @@ function run(task, arm, i) {
     if (presets.NAMES.includes(arm)) {
       execFileSync('node', [path.join(KIT, 'scripts', 'init-project.js'), '--target', dir, '--preset', arm, '--tools', 'claude'], { stdio: 'ignore' });
     }
+    if (task.setup) spawnSync(task.setup, { cwd: dir, shell: true, env: cleanEnv({ BENCH_DIR: dir }), stdio: 'ignore' });
+    if (SPEC.gitHooks && presets.NAMES.includes(arm) && arm !== 'normal' && arm !== 'best' && arm !== 'auto') spawnSync('git config core.hooksPath .githooks', { cwd: dir, shell: true, stdio: 'ignore' });
     const plugin = PLUGIN_ARMS.has(arm);
     const args = ['-p', task.prompt, '--model', MODEL, '--max-turns', '80', '--max-budget-usd', String(BUDGET), '--output-format', 'json', '--allowed-tools', TOOLS.concat(plugin ? ['Agent', 'Skill'] : []).join(','), '--permission-mode', 'acceptEdits'];
     if (plugin) args.push('--plugin-dir', KIT);
@@ -97,18 +99,21 @@ function run(task, arm, i) {
     const s = file && fs.existsSync(file) ? sessionStats(file) : null;
     const changed = git(dir, 'status', '--porcelain').split('\n').filter((l) => l && !/node_modules/.test(l));
     const added = git(dir, 'diff', '--shortstat');
-    for (const h of task.hidden) {
+    for (const h of task.hidden || []) {
       fs.mkdirSync(path.dirname(path.join(dir, h)), { recursive: true });
       fs.writeFileSync(path.join(dir, h), git(REPO, 'show', `${task.fix}:${h}`));
     }
-    const sh = (cmd) => spawnSync(cmd, { cwd: dir, shell: true, encoding: 'utf8', env: cleanEnv({ CI: 'true' }), maxBuffer: 64 * 1024 * 1024 });
+    const sh = (cmd) => spawnSync(cmd, { cwd: dir, shell: true, encoding: 'utf8', env: cleanEnv({ CI: 'true', BENCH_DIR: dir }), maxBuffer: 64 * 1024 * 1024 });
     const hr = sh(task.hiddenCmd);
-    const hid = jestCounts(`${hr.stderr}\n${hr.stdout}`.replace(/\u001b\[[0-9;]*m/g, ''));
+    let hid = jestCounts(`${hr.stderr}\n${hr.stdout}`.replace(/\u001b\[[0-9;]*m/g, ''));
+    if (task.exitScore) hid = { passed: hr.status === 0 ? 1 : 0, failed: hr.status === 0 ? 0 : 1, total: 1 };
+    const doneRun = task.doneCmd ? spawnSync(task.doneCmd, { cwd: dir, shell: true, env: cleanEnv({ BENCH_DIR: dir }), encoding: 'utf8' }) : null;
+    const failedNames = [...new Set((`${hr.stdout}\n${hr.stderr}`.replace(/\u001b\[[0-9;]*m/g, '').match(/^\s*(?:✖|✕|×)\s+.+$/gm) || []).map((l) => l.replace(/^\s*(?:✖|✕|×)\s+/, '').replace(/\s*\(\d+(\.\d+)?ms\)\s*$/, '').slice(0, 110)))];
     const reg = SPEC.regression ? sh(SPEC.regression) : null;
     const regC = reg ? jestCounts(`${reg.stderr}\n${reg.stdout}`.replace(/\u001b\[[0-9;]*m/g, '')) : null;
     return {
       task: task.id, size: task.size, project: tag, arm, run: i, secs, cost: Number((j.total_cost_usd || 0).toFixed(3)), turns: j.num_turns || null,
-      hiddenPassed: hid.passed, hiddenTotal: hid.total, hiddenOk: hid.total > 0 && hid.failed === 0,
+      hiddenPassed: hid.passed, hiddenTotal: hid.total, hiddenOk: hid.total > 0 && hid.failed === 0, doneOk: doneRun ? doneRun.status === 0 : null, failedNames,
       regressionFailed: regC ? regC.failed + (regC.error ? 1 : 0) : null, filesChanged: changed.length, diff: added.trim(),
       freshTotal: s && s.freshTotal, outTok: s && s.main.output + s.sub.output, cacheRead: s && s.main.cacheRead + s.sub.cacheRead, turnsTotal: s && s.main.turns + s.sub.turns, peak: s && s.main.peakContext, subagents: s && s.sub.count, error: j.is_error || r.status !== 0 ? String(j.result || r.stderr || '').slice(0, 160) : undefined,
     };
