@@ -16,6 +16,23 @@ It gives a repo:
 
 Everything is plain Markdown and dependency-free Node.js.
 
+## What it does, and what it does not
+
+**It is** a safety net, shared project memory and a hand-off routine for coding agents: hooks that block secrets, force-pushes and destructive database commands; short rules and docs every tool reads; manager, review and hand-off workflows for several agents.
+
+**It is not** a way to get better code or fewer tokens out of a single task. We measured that and it does not show up:
+
+| Sonnet, hidden-test scoring, 3 runs per task | Tasks passed completely | Tokens per run vs no kit |
+|---|---|---|
+| Large monolith (6 tasks): no kit | 67% | 69k |
+| lite / low-tokens | 67% / 72% | -2% / -3% |
+| auto / normal / best | 61% / 72% / 67% | +1% / +2% / +6% |
+| Small module (3 tasks): no kit | 33% | 24k |
+| lite / low-tokens | 33% / 33% | +9% / +4% |
+| auto / normal / best | 33% / 33% / 33% | +34% / +37% / +46% |
+
+Results were within noise of using no kit. (The small-module figures for `auto`, `normal` and `best` come from the first run, which still had the done gate; with the gate limited to `best`, `normal` and `auto` were still 12 to 65 percent above no kit per task.) The full editions add a fixed context cost (about 6k tokens per session), which matters on small tasks and is small on large ones. Pick `lite` or `low-tokens` if you only want the safety net. Tokens, not money, because prices change. Method, per-task tables and limits: [docs/BENCHMARK.md](docs/BENCHMARK.md) and [docs/benchmarks/real-tasks.md](docs/benchmarks/real-tasks.md).
+
 ---
 
 ## Quick start

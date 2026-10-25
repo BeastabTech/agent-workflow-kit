@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Done gate: a Stop hook that, after code edits, requires a test run and a test file before the agent may finish; capped at two blocks per session. Only the `best` edition uses it (in the benchmarks it cost 20 to 90 percent more tokens on small tasks for no change in results, so `normal`, `auto` and `low-tokens` do not).
+- README states plainly what the kit is (safety net, shared memory, hand-off) and what it is not (a measured gain in code quality or tokens), with the benchmark table.
 - Benchmarks on real tasks in a small and a large project (`scripts/bench-real.js`, `bench-summary.js`, `docs/benchmarks/real-tasks.md`): no edition beat no kit beyond noise. Measured numbers moved from the README to `docs/BENCHMARK.md`; edition descriptions no longer claim better quality.
 
 ## 0.2.0
