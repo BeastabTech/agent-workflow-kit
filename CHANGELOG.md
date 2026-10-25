@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.1
 
 - Done gate: a Stop hook that, after code edits, requires a test run and a test file before the agent may finish; capped at two blocks per session. Only the `best` edition uses it (in the benchmarks it cost 20 to 90 percent more tokens on small tasks for no change in results, so `normal`, `auto` and `low-tokens` do not).
 - README states plainly what the kit is (safety net, shared memory, hand-off) and what it is not (a measured gain in code quality or tokens), with the benchmark table.
