@@ -24,6 +24,7 @@ const DEFAULTS = {
   secretScan: { allowPaths: [] },
   commands: {},
   limits: {},
+  planGate: true, // worker sub-agents ask the human until .agents/PLAN.md says Status: approved
 };
 
 // minimal keeps only the clear safety nets; strict turns warnings and soft asks into hard stops.
@@ -70,6 +71,7 @@ function loadConfig(cwd) {
   const team = readJson(file);
   const cfg = { ...DEFAULTS, ...(team || {}) };
   cfg.secretScan = { ...DEFAULTS.secretScan, ...((team && team.secretScan) || {}) };
+  cfg.planGate = !/^(false|0|no|off)$/i.test(String(cfg.planGate));
   cfg.root = root;
   cfg.hasTeamConfig = Boolean(team);
   cfg.disabled = new Set(

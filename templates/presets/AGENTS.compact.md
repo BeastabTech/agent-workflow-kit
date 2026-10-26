@@ -7,7 +7,7 @@ Commands: test `{{TEST_CMD}}` · lint `{{LINT_CMD}}` · typecheck `{{TYPECHECK_C
 ## Rules
 
 1. Never break what runs today: additive changes, no renames or removals of public routes, fields, events or enum values.
-2. Ask before building when something is unclear; send blocking questions in one numbered message with your recommendation.
+2. Ask before building when something is unclear; send blocking questions in one numbered message with your recommendation. Multi-step work gets a short plan and the human's yes first; run agents only as many at once as `node .agents/tools/budget.js machine` allows.
 3. Protected files need the owner's OK on the exact diff: {{PROTECTED_FILES_INLINE}}.
 4. Small, plain code. New code is tested; changed old code gets a smoke test.
 5. Before saying done, review your own diff and report the commands you ran and their results, plus what you could not run.

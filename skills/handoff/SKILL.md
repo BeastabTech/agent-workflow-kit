@@ -48,7 +48,7 @@ Then:
 
 ## Resume
 
-1. Read `.agents/HANDOFF.md`, then `.agents/STATE.md`, then your inbox.
+1. Read `.agents/HANDOFF.md`, then `.agents/PLAN.md` (is it approved, which tasks are open), then `.agents/STATE.md`, then your inbox.
 2. Run `git status --short` and `git log --oneline -5`; compare with the note. If they disagree, trust git and say so.
 3. Re-check every claim the note says you hold (`msg.js claims`).
 4. Tell the user in three lines: where things stand, what you will do next, what you need from them. Then continue.

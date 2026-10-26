@@ -37,21 +37,33 @@ function availableMB() {
   return Math.round(os.freemem() / MB);
 }
 
-/** Running coding-agent processes (Claude Code, Codex, Gemini CLI) and their memory, from ps. */
-function agentProcesses() {
-  if (process.platform === 'win32') return { count: 0, rssMB: 0 };
-  const out = run('ps', ['-axo', 'rss=,comm=']);
+/**
+ * Parse `ps -axo rss=,args=` output. Counts the CLI binaries `claude`, `codex` and `gemini` (case matters:
+ * `Claude` inside Claude.app is the desktop app's helper processes, not a session; paths may contain spaces)
+ * and the same CLIs run through node.
+ */
+function parseAgentPs(out) {
   let count = 0;
   let rss = 0;
-  for (const line of out.split('\n')) {
+  for (const line of String(out || '').split('\n')) {
     const m = /^\s*(\d+)\s+(.+)$/.exec(line);
     if (!m) continue;
-    const name = m[2].trim().split('/').pop();
-    if (!/^(claude|codex|gemini)$/i.test(name)) continue;
+    // Command and script only: everything before the first flag, so a wrapper such as
+    // `disclaimer --pgroup -- /path/claude` does not count as a second session.
+    const head = m[2].split(/\s+-/)[0].trim();
+    const native = /(^|\/)(claude|codex|gemini)$/.test(head);
+    const viaNode = /(^|\/)node(\.exe)?\s/i.test(head) && /(claude-code|@openai\/codex|gemini-cli)/i.test(head);
+    if (!native && !viaNode) continue;
     count += 1;
     rss += Number(m[1]) / 1024;
   }
   return { count, rssMB: Math.round(rss) };
+}
+
+/** Running coding-agent processes (Claude Code, Codex, Gemini CLI) and their memory. */
+function agentProcesses() {
+  if (process.platform === 'win32') return { count: 0, rssMB: 0 };
+  return parseAgentPs(run('ps', ['-axo', 'rss=,args=']));
 }
 
 /** One reading of the machine. Pass `fake` in tests to skip the OS. */
@@ -102,4 +114,4 @@ function describe(snap, fit) {
   return `${head} ${verdict}${fit.reasons.length ? ` (${fit.reasons.join('; ')})` : ''}`;
 }
 
-module.exports = { snapshot, safeParallel, describe, availableMB, agentProcesses };
+module.exports = { snapshot, safeParallel, describe, availableMB, agentProcesses, parseAgentPs };

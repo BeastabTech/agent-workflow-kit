@@ -56,7 +56,7 @@ Use `templates/closeout-report.md`:
 node .agents/tools/msg.js post --from closer --to manager --type closeout --topic "<feature>" --body "<report>"
 ```
 
-The manager passes the "needs a person" list to the user, with your suggestions, and sends fixes that need a decision back to the right worker.
+The manager passes the "needs a person" list to the user, with your suggestions, and sends fixes that need a decision back to the right worker. Once the user has the final word, the manager sets `Status: done` in `.agents/PLAN.md`; the next piece of work starts a fresh plan.
 
 ## Rules
 

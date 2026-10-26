@@ -25,7 +25,7 @@ About 150 words:
 
 ## 3. The conversation
 
-- One question per message, a single sentence, in the user's words. Put your recommended answer in it ("I would keep the old endpoint for a month; OK?").
+- One question per message, a single sentence, in the user's words. Put your recommended answer in it ("I would keep the old endpoint for a month; OK?"). This is the one phase where questions go one at a time; once the plan runs, batch them in one numbered message as the project rules say.
 - Stop asking when the answers would no longer change the build. Usually 2 to 5 questions.
 - If the user says "go" or "you decide", stop asking, state the main choices you made in one line each, and continue to step 4.
 
@@ -35,7 +35,7 @@ In a message of its own: two or three ways to do it, each in two lines with cost
 
 ## 5. Plan, sized for the machine
 
-Write `.agents/PLAN.md` (or show it in chat in projects without `.agents/`), with `Status: draft`:
+Fill the sections of `.agents/PLAN.md` (keep its `Status:` and `Approved by:` lines; a plan from earlier work that says `done` or `approved` is replaced, starting again at `Status: draft`). In projects without `.agents/`, show the same plan in chat.
 - Goal in one line, the chosen approach, what is out of scope.
 - Tasks: one task = one testable result = one set of files; order and dependencies; which tasks can run in parallel; which need the user's input or approval and when.
 - Agents: size it (`node .agents/tools/budget.js triage ...`), then check the laptop (`node .agents/tools/budget.js machine`) and the plan (`budget.js plan --agents <n> --parallel <p>`). Never plan more at once than the machine check allows; if pressure is HIGH, plan solo or one at a time and tell the user why.
@@ -55,3 +55,5 @@ Stop and ask the user, one numbered message with your recommendation each, when:
 - The machine check says HIGH pressure and the plan needs parallel agents.
 
 Everything else: decide, note it in the plan as `Decision: <what> — <why>`, and keep going. Do not ask "should I continue?" between tasks.
+
+When the work is finished (closeout done, user told), set `Status: done` so the next piece of work starts from a fresh plan and its workers are gated again.

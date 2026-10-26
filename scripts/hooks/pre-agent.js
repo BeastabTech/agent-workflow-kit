@@ -23,16 +23,17 @@ function trackedFiles(root) {
   }
 }
 
-// Agents that only read or review; anything else is a worker that changes things.
-const READ_ONLY = /(^|:)(explorer|planner|reviewer|security-reviewer|explore|plan|claude-code-guide)$/i;
+// Agents that only read, plan or review (any prefix, hyphenated names included); anything else is a worker that changes things.
+const READ_ONLY = /(^|[:-])(explorer|planner|reviewer|explore|plan|guide|architect|analyzer)$/i;
 
-/** True when .agents/PLAN.md says `Status: approved` (written only after the user's yes). */
-function planApproved(cwd) {
-  try {
-    return /^\s*Status:\s*approved\b/im.test(fs.readFileSync(path.join(sharedRoot(cwd), '.agents', 'PLAN.md'), 'utf8'));
-  } catch (_) {
-    return false;
+/** True when .agents/PLAN.md in this checkout or the main checkout says `Status: approved` (written only after the user's yes). */
+function planApproved(cfg, cwd) {
+  for (const root of new Set([cfg.root, sharedRoot(cwd)])) {
+    try {
+      if (/^\s*Status:\s*approved\b/im.test(fs.readFileSync(path.join(root, '.agents', 'PLAN.md'), 'utf8'))) return true;
+    } catch (_) {}
   }
+  return false;
 }
 
 function main() {
@@ -47,22 +48,28 @@ function main() {
   const prompt = String(ti.prompt || '');
   const next = { promptChars: prompt.length, hash: B.promptHash(prompt) };
   const verdict = B.evaluate(state, limits, next);
-  B.record(state, { type: ti.subagent_type || 'general-purpose', model: ti.model || 'inherit', name: String(ti.description || '').slice(0, 60), est: verdict.nextEst, hash: next.hash });
-  try {
-    B.save(cfg.root, sid, state);
-  } catch (_) {}
   const findings = [];
   const type = String(ti.subagent_type || 'general-purpose');
   const cwd = input.cwd || process.cwd();
-  if (enabled(cfg, 'plan-gate') && cfg.planGate !== false && cfg.hasTeamConfig && !READ_ONLY.test(type) && !planApproved(cwd)) {
+  // Count the spawn only when it goes through without a question: a declined spawn never gets a
+  // SubagentStop, and a phantom "running" agent would make every later check ask too early.
+  const commit = () => {
+    if (findings.some((f) => f.level === 'ask') || verdict.level === 'ask') return;
+    B.record(state, { type, model: ti.model || 'inherit', name: String(ti.description || '').slice(0, 60), est: verdict.nextEst, hash: next.hash });
+    try {
+      B.save(cfg.root, sid, state);
+    } catch (_) {}
+  };
+  if (enabled(cfg, 'plan-gate') && cfg.planGate && cfg.hasTeamConfig && !READ_ONLY.test(type) && !planApproved(cfg, cwd)) {
     findings.push({ level: 'ask', check: 'plan-gate', reason: `A worker agent (${type}) is about to start, but .agents/PLAN.md has no "Status: approved". Talk to the user first (discover skill): what they want, the approach, the task split and how many agents; write the plan and set Status: approved only after their yes. Read-only helpers (explorer, planner, reviewer) do not need it.` });
   }
   let m = null;
   try {
     m = B.machine(limits);
   } catch (_) {}
-  if (m && enabled(cfg, 'machine-check')) {
-    const running = B.summary(state, limits).active; // includes this spawn
+  // limitedBy 'limit' means the cap is maxParallel itself, which the budget check below already asks about.
+  if (m && enabled(cfg, 'machine-check') && m.fit.limitedBy !== 'limit') {
+    const running = B.summary(state, limits).active + 1; // plus this spawn
     if (m.fit.pressure === 'high' && running > 1) {
       findings.push({ level: 'ask', check: 'machine-check', reason: `${m.text} This would be agent ${running} running at once. Wait for one to finish or do the work yourself.` });
     } else if (running > m.fit.parallel) {
@@ -77,10 +84,12 @@ function main() {
       findings.push({ level: cfg.profile === 'strict' ? 'ask' : 'warn', check: 'agent-budget', reason: `This repo has ${n} tracked files (under ${limits.smallRepoFiles}). A search here is small enough for git grep; in a measured run an explorer sub-agent cost about 6.7 times the tokens and 4 times the time with no saving in the main context. Do the search yourself unless it needs dozens of file reads.` });
     }
   }
-  if (verdict.level === 'ok') respondPreToolUse(findings);
-  const sum = B.summary(state, limits);
-  const tail = ` (started ${sum.total}, running ${sum.active}, ~${Math.round(sum.estTokens / 1000)}k tokens estimated). Tell the user before spawning more: \`node .agents/tools/budget.js status\`.`;
-  findings.push({ level: verdict.level === 'ask' || cfg.profile === 'strict' ? 'ask' : 'warn', check: 'agent-budget', reason: verdict.messages.join(' ') + tail });
+  if (verdict.level !== 'ok') {
+    const sum = B.summary(state, limits);
+    const tail = ` (started ${sum.total + 1}, running ${sum.active + 1}, ~${Math.round((sum.estTokens + verdict.nextEst) / 1000)}k tokens estimated). Tell the user before spawning more: \`node .agents/tools/budget.js status\`.`;
+    findings.push({ level: verdict.level === 'ask' || cfg.profile === 'strict' ? 'ask' : 'warn', check: 'agent-budget', reason: verdict.messages.join(' ') + tail });
+  }
+  commit();
   respondPreToolUse(findings);
 }
 

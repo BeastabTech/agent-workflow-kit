@@ -132,3 +132,98 @@ test('init copies resources.js and PLAN.md, and budget.js machine runs in the pr
   assert.equal(out.status, 0, out.stderr);
   assert.match(out.stdout, /Safe to run|Pressure HIGH/);
 });
+
+test('parseAgentPs: CLI sessions count, desktop helpers, wrappers and MCP servers do not', () => {
+  const ps = [
+    '290928 /opt/app/Library/Application Support/Claude/claude-code/2.1.0/abc/claude.app/Contents/MacOS/claude --resume x',
+    '  1200 /Applications/Claude.app/Contents/Helpers/disclaimer --pgroup -- /opt/app/Library/Application Support/Claude/claude-code/2.1.0/abc/claude.app/Contents/MacOS/claude',
+    '400000 /Applications/Claude.app/Contents/Frameworks/Claude Helper (Renderer).app/Contents/MacOS/Claude Helper (Renderer) --type=renderer',
+    '150000 /opt/homebrew/bin/node /opt/npm/lib/node_modules/@anthropic-ai/claude-code/cli.js',
+    ' 90000 /usr/local/bin/node /opt/claude/plugins/some-mcp/server.js',
+    ' 80000 codex --full-auto',
+    ' 70000 /usr/local/bin/gemini',
+    ' 60000 node /usr/lib/node_modules/@google/gemini-cli/dist/index.js',
+    ' 50000 ugrep -G claude',
+  ].join('\n');
+  const r = R.parseAgentPs(ps);
+  assert.equal(r.count, 5);
+  assert.equal(r.rssMB, Math.round((290928 + 150000 + 80000 + 70000 + 60000) / 1024));
+  assert.deepEqual(R.parseAgentPs(''), { count: 0, rssMB: 0 });
+});
+
+test('limits as strings and odd limits still give a sane fit', () => {
+  const l = B.limitsFrom({ limits: { agentMemMB: '800', memReserveMB: '0', cpuPerAgent: '2', maxParallel: '0' } });
+  assert.equal(l.agentMemMB, 800);
+  const fit = R.safeParallel(box({ availMB: 6000, load1: 2 }), l); // reserve floor 15% = 2458; (6000-2458)/800 = 4; cpu (8-2)/2 = 3
+  assert.equal(fit.parallel, 3);
+  assert.equal(fit.limitedBy, 'cpu');
+  assert.equal(B.machine(B.limitsFrom({ limits: { machineCheck: '0' } })), null);
+});
+
+test('plan gate: CRLF, casing, done status, and read-only names with prefixes or hyphens', () => {
+  const { dir } = tmpRepo({ limits: { smallRepoFiles: 0 } });
+  const plan = path.join(dir, '.agents', 'PLAN.md');
+  fs.writeFileSync(plan, '# Plan\r\n\r\nstatus: APPROVED\r\n');
+  assert.equal(decision(spawn(dir, 'c1', 'closer')), 'allow');
+  fs.writeFileSync(plan, '# Plan\n\nStatus: done\n');
+  assert.equal(decision(spawn(dir, 'c2', 'closer')), 'ask');
+  for (const t of ['ecc:code-reviewer', 'ecc:code-explorer', 'ecc:architect', 'Plan', 'claude-code-guide', 'ecc:comment-analyzer']) assert.equal(decision(spawn(dir, 'c3' + t, t)), 'allow', t);
+  for (const t of ['test-writer', 'agent-workflow-kit:qa-tester', 'ecc:gan-generator']) assert.equal(decision(spawn(dir, 'c4' + t, t)), 'ask', t);
+});
+
+test('plan gate: "false" and 0 in config turn it off; the approved plan in the main checkout counts from a worktree', () => {
+  const { dir: a } = tmpRepo({ planGate: 'false', limits: { smallRepoFiles: 0 } });
+  assert.equal(decision(spawn(a, 'f', 'general-purpose')), 'allow');
+  const { dir: b } = tmpRepo({ planGate: 0, limits: { smallRepoFiles: 0 } });
+  assert.equal(decision(spawn(b, 'f', 'general-purpose')), 'allow');
+  const { dir, git } = tmpRepo({ limits: { smallRepoFiles: 0 } });
+  git('add', '.agents/config.json');
+  git('commit', '-q', '-m', 'chore: kit config');
+  const wt = path.join(dir, '..', path.basename(dir) + '-wt');
+  git('worktree', 'add', '-q', wt, '-b', 'wt');
+  assert.equal(decision(spawn(wt, 'w1', 'general-purpose')), 'ask');
+  fs.writeFileSync(path.join(dir, '.agents', 'PLAN.md'), 'Status: approved\n');
+  assert.equal(decision(spawn(wt, 'w2', 'general-purpose')), 'allow');
+  fs.writeFileSync(path.join(dir, '.agents', 'PLAN.md'), 'Status: draft\n');
+  fs.mkdirSync(path.join(wt, '.agents'), { recursive: true });
+  fs.writeFileSync(path.join(wt, '.agents', 'PLAN.md'), 'Status: approved\n');
+  assert.equal(decision(spawn(wt, 'w3', 'general-purpose')), 'allow');
+});
+
+test('a spawn that ends in a question is not counted as running', () => {
+  const { dir } = tmpRepo({ limits: { smallRepoFiles: 0, maxParallel: 10 } });
+  assert.equal(decision(spawn(dir, 'q', 'general-purpose')), 'ask'); // plan gate
+  const status = spawnSync('node', [path.join(ROOT, 'scripts', 'agent-budget.js'), 'status', '--session', 'q'], { cwd: dir, encoding: 'utf8' }).stdout;
+  assert.match(status, /0 started/);
+  assert.equal(decision(spawn(dir, 'q', 'explorer')), 'allow');
+  assert.match(spawnSync('node', [path.join(ROOT, 'scripts', 'agent-budget.js'), 'status', '--session', 'q'], { cwd: dir, encoding: 'utf8' }).stdout, /1 started/);
+});
+
+test('low-tokens: the parallel cap comes from the budget check alone, not a second machine question', () => {
+  const { dir } = tmpRepo({ planGate: false, preset: 'low-tokens', limits: { smallRepoFiles: 0 } });
+  assert.equal(decision(spawn(dir, 'lt', 'reviewer')), 'allow');
+  const second = spawn(dir, 'lt', 'reviewer');
+  assert.equal(decision(second), 'ask');
+  assert.match(reason(second), /agent-budget/);
+  assert.doesNotMatch(reason(second), /machine-check/);
+});
+
+test('session-start: the discover note is only there when the plan gate is on', () => {
+  const { dir } = tmpRepo({ planGate: false });
+  const ctx = runHook('session-start', { cwd: dir, source: 'startup' }).json.hookSpecificOutput.additionalContext;
+  assert.doesNotMatch(ctx, /discover skill/);
+  const { dir: lite } = tmpRepo({ preset: 'lite' });
+  assert.doesNotMatch(runHook('session-start', { cwd: lite, source: 'startup' }).json.hookSpecificOutput.additionalContext, /discover skill/);
+});
+
+test('init: PLAN.md is gitignored only when state is not synced through git', () => {
+  const { init } = require('../scripts/init-project');
+  const { dir: g } = tmpRepo();
+  init({ target: g, tools: 'claude' });
+  assert.doesNotMatch(fs.readFileSync(path.join(g, '.gitignore'), 'utf8'), /PLAN\.md/);
+  const { dir: l } = tmpRepo();
+  const answers = path.join(l, 'answers.json');
+  fs.writeFileSync(answers, JSON.stringify({ stateSync: 'local' }));
+  init({ target: l, tools: 'claude', answers });
+  assert.match(fs.readFileSync(path.join(l, '.gitignore'), 'utf8'), /\.agents\/PLAN\.md/);
+});

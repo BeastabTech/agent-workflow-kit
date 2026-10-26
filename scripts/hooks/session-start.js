@@ -6,7 +6,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { loadConfig, sharedRoot } = require('../lib/config');
+const { loadConfig, sharedRoot, enabled } = require('../lib/config');
 const { readInput } = require('../lib/hook-io');
 const { limitsFrom, machine } = require('../lib/budget');
 const presets = require('../lib/presets');
@@ -39,7 +39,7 @@ function main() {
     notes.push(`This project uses the agent workflow kit. Work mode: ${cfg.workMode}. Index: AGENTS.md. State: .agents/STATE.md.`);
     const lim = limitsFrom(cfg);
     notes.push(`Sub-agent limits: ${lim.maxParallel} at once, ${lim.maxSpawns} per session. Check a plan with: node .agents/tools/budget.js plan --agents <n>. Use the delegate skill; warn the user before spawning many.`);
-    notes.push('Before multi-step or multi-agent work: talk to the user first (discover skill), get their yes on a written plan (.agents/PLAN.md), then split it into tasks. Stop and wait for the user on real decisions.');
+    if (cfg.planGate && enabled(cfg, 'plan-gate')) notes.push('Before multi-step or multi-agent work: talk to the user first (discover skill), get their yes on a written plan (.agents/PLAN.md, Status: approved), then split it into tasks. Worker agents ask the user until then. Stop and wait for the user on real decisions.');
     try {
       const m = machine(lim);
       if (m) notes.push(`${m.text} Re-check with: node .agents/tools/budget.js machine.`);

@@ -37,7 +37,7 @@ Both use the same message types. See [COMMUNICATION.md](COMMUNICATION.md).
 
 | Value | Where state lives | Sync |
 |---|---|---|
-| `git` | `.agents/STATE.md`, `HANDOFF.md`, `BUGS.md` committed; `LOG.md` gitignored | `git pull` |
+| `git` | `.agents/STATE.md`, `HANDOFF.md`, `BUGS.md`, `PLAN.md` committed; `LOG.md` gitignored | `git pull` |
 | `folder` | `sharedDir` (for example a synced drive folder) | the folder sync |
 | `local` | `.agents/` gitignored | none; copy the hand-off by hand |
 

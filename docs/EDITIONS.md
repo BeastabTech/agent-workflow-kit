@@ -5,7 +5,7 @@ One choice at install time sets how much the kit does. Pick the edition that mat
 | Edition | For | Hooks | Skills loaded every session | Delegation | Reply style |
 |---|---|---|---|---|---|
 | `lite` | Small projects, quick fixes, anyone who wants only the safety net | `minimal`: secrets, AI trailers, force-push, destructive database | 5 core (exported, no plugin) | solo | normal |
-| `low-tokens` | Cutting cost; long sessions on a budget | `standard` | 9 core (exported, no plugin) | solo; at most 2 agents even on a big problem | caveman-lite |
+| `low-tokens` | Cutting cost; long sessions on a budget | `standard` | 10 core (exported, no plugin) | solo; at most 2 agents even on a big problem | caveman-lite |
 | `normal` | Default | `standard` | all (plugin) | by problem size | normal |
 | `auto` | Let the kit decide per task | `standard` | all (plugin) | sized per task: small work like low-tokens, medium like normal, big or risky like best | normal |
 | `best` | Work you want reviewed hard | `strict` | all (plugin) | by problem size, plus done gate, independent review and closeout | normal |
@@ -32,6 +32,7 @@ Every edition starts the same way: size the problem, then pick the mode, model a
 
 ```bash
 node .agents/tools/budget.js triage --files 2 --read 5 [--parts 1] [--risk high]
+node .agents/tools/budget.js machine      # free memory, CPU load, agents already running: how many at once
 ```
 
 | Size | Normal | low-tokens | best |

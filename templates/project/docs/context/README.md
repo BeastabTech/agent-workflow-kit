@@ -5,7 +5,7 @@ Short, current facts for any agent or new developer. Read in this order and stop
 ## Session-start checklist
 
 1. Read `AGENTS.md`.
-2. Read `.agents/HANDOFF.md` if it has content, then `.agents/STATE.md`.
+2. Read `.agents/HANDOFF.md` if it has content, then `.agents/PLAN.md` (the agreed plan, if any), then `.agents/STATE.md`.
 3. Run `git status --short`. Other agents may have unfinished work in this checkout ({{WORK_MODE}} mode).
 4. Check messages: `node .agents/tools/msg.js inbox --for <your-name>`.
 5. Open only the deep doc your task needs (table in `AGENTS.md`).

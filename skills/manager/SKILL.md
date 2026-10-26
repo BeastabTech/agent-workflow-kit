@@ -73,7 +73,7 @@ When a worker posts `done`, ask a different agent (or the `reviewer` agent) to r
 
 ## Closeout
 
-When every worker has posted `done` and reviews are clear, start the `closer` agent (or run the `closeout` skill) on the whole feature. Do not tell the user "done" before its report. Pass its "Needs a person" list to the user as one numbered message with its recommendations; send decided fixes back to the right worker; re-run the closer if code changed.
+When every worker has posted `done` and reviews are clear, start the `closer` agent (or run the `closeout` skill) on the whole feature. Do not tell the user "done" before its report. Pass its "Needs a person" list to the user as one numbered message with its recommendations; send decided fixes back to the right worker; re-run the closer if code changed. When the user has the final word, set `Status: done` in `.agents/PLAN.md`: the next goal gets a fresh plan and its workers are gated again.
 
 ## Before your context fills or you stop
 

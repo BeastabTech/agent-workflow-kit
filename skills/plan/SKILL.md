@@ -7,7 +7,7 @@ description: Plan a feature or change before writing code - restate the goal, re
 
 ## 1. Understand
 - Restate the goal in two lines and what "done" looks like.
-- Read `AGENTS.md`, the feature file, and the code you will touch (use the `explorer` agent for wide searches).
+- Read `AGENTS.md`, the feature file, and the code you will touch yourself; an `explorer` agent only when it would take dozens of file reads (see the `delegate` skill).
 - Search before you build: an existing helper, library or pattern in the repo beats new code.
 
 ## 2. Ask
@@ -15,8 +15,11 @@ If the request leaves something that matters open, run the `discover` skill firs
 
 ## 3. Plan (keep it to one screen)
 
+In a kit project fill `.agents/PLAN.md` (its sections and `Status:` line win); this block is the chat form for projects without `.agents/`.
+
 ```markdown
 ## Plan: <name>
+Status: draft · Approved by: <the user's words, after their yes>
 Goal: <one line>
 Approach: <2–4 lines; why this over the obvious alternative>
 Steps:

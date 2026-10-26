@@ -5,7 +5,7 @@ How several agents (any tool) and humans work on this repo without clashing.
 ## Roles
 
 - **Human (owner):** decides scope, answers questions, gives approvals in the session that acts.
-- **Manager:** splits work, writes short briefs, routes questions, reads only the end of worker output, never does the workers' coding.
+- **Manager:** talks the goal through with the human and gets a yes on `.agents/PLAN.md`, splits work, writes short briefs, routes questions, reads only the end of worker output, never does the workers' coding. Runs no more agents at once than `budget.js machine` allows.
 - **Worker:** one task, one set of files. Asks first, builds, self-reviews, reports with evidence.
 - **State owner:** the only writer of `.agents/STATE.md`. Others send it updates.
 - **Reviewer:** reads a finished diff against the rules and the self-review list. Read-only.

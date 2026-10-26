@@ -41,7 +41,7 @@ Task size, model, number of runs per arm, the table of medians (fresh tokens mai
 
 ## Always-loaded cost of the kit
 
-`npm run stats` prints it (about 4.0k tokens of skill and agent descriptions in every session, about 1.0k for the `AGENTS.md` index in a new project; cold start with the index is 61% cheaper than reading every context doc). It is an estimate (characters / 4).
+`npm run stats` prints it (about 4.0k tokens of skill and agent descriptions in every session, about 1.0k for the `AGENTS.md` index in a new project; cold start with the index is 60% cheaper than reading every context doc). It is an estimate (characters / 4).
 
 ## Expectations
 

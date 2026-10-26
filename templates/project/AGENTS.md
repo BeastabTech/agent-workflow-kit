@@ -9,7 +9,7 @@ This file is an **index** for every coding agent and every new developer. Read i
 ## Golden rules
 
 1. **Never break what runs today.** Additive changes only: optional fields, nullable columns, new routes. No renames or removals of public routes, response fields, enum values, events or queues.
-2. **Ask before you build.** Send every blocking question in one numbered message, each with your recommended answer. Stop and ask when something does not match the docs.
+2. **Ask before you build.** Send every blocking question in one numbered message, each with your recommended answer. Stop and ask when something does not match the docs. Multi-step or multi-agent work starts with a plan the human said yes to (`.agents/PLAN.md`, `discover` skill).
 3. **Protected files need the owner's OK** on the exact diff (list in `.agents/config.json`, owners in `docs/context/MODULE_MAP.md`).
 4. **Small, plain, reusable code.** No god files, no abstraction without a second real use. Shared logic goes in one shared place.
 5. **Side effects fail open and sit behind a flag.** Emails, webhooks and events never fail the main request unless they are the point of it.
@@ -42,7 +42,7 @@ This file is an **index** for every coding agent and every new developer. Read i
 | Known problems and how to check them | `docs/context/DEBUGGING.md` |
 | Feature behaviour (one file per feature) | `docs/context/features/` |
 | Current state, hand-off, bugs, message log | `.agents/` |
-| Spawn limits, who is doing what | `node .agents/tools/budget.js plan\|status`, `node .agents/tools/msg.js roster` |
+| Spawn limits, what this machine can run at once, who is doing what | `node .agents/tools/budget.js machine\|plan\|status`, `node .agents/tools/msg.js roster` |
 
 ## Save tokens
 
