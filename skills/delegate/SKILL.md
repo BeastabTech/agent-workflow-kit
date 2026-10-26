@@ -1,6 +1,6 @@
 ---
 name: delegate
-description: Decide whether to hand work to a sub-agent (default: do it yourself), pick agent and model, keep briefs and reports small, and check the plan against spawn limits before starting. Use before spawning any sub-agent or worker, for wide searches, parallel work, or when a session uses too many agents or too much context.
+description: Decide whether to hand work to a sub-agent (default: do it yourself), pick agent and model, keep briefs and reports small, and check the plan against spawn limits and the machine's free memory and CPU before starting. Use before spawning any sub-agent or worker, for wide searches, parallel work, or when a session uses too many agents or too much context.
 ---
 
 # Delegate with a small footprint
@@ -12,12 +12,13 @@ Size the problem first: `node .agents/tools/budget.js triage --files <n> --read 
 
 ## Then: size the plan and check it against the limits
 
-Before you spawn anything, write down how many agents the plan needs (workers, one reviewer, the `closer`) and how many run at once, then check it:
+Before you spawn anything, write down how many agents the plan needs (workers, one reviewer, the `closer`) and how many run at once, then check it against the limits and the machine:
 ```bash
+node .agents/tools/budget.js machine       # free memory, CPU load, agents already running: safe count now
 node .agents/tools/budget.js plan --agents <n> --parallel <p> --brief-chars <typical>
 node .agents/tools/budget.js status        # during the work
 ```
-Defaults: 4 at once, 10 per session (`limits` in `.agents/config.json`). If there is no budget tool in this project, apply those numbers yourself. **Tell the user the count and any WARNING before you start**, with your recommendation (merge tasks, run in waves, raise a limit), and wait if they must decide. The PreToolUse hook repeats the check on every spawn and asks the human when a limit would be crossed. The numbers are estimates for early warning, not a bill.
+Never run more at once than `machine` says, even under the limits: every agent and session takes memory and CPU, and too many freeze the laptop and the agent app. Pressure HIGH means one at a time or solo. Workers (anything that edits) also need the user's yes on a plan first (`discover` skill, `.agents/PLAN.md`). Defaults: 4 at once, 10 per session (`limits` in `.agents/config.json`). If there is no budget tool in this project, apply those numbers yourself. **Tell the user the count and any WARNING before you start**, with your recommendation (merge tasks, run in waves, raise a limit), and wait if they must decide. The PreToolUse hook repeats the check on every spawn and asks the human when a limit would be crossed. The numbers are estimates for early warning, not a bill.
 
 ## Delegate when
 - The task needs many reads or searches and you only need the conclusion (`explorer`).

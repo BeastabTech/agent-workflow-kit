@@ -5,6 +5,9 @@ const path = require('path');
 const { execFileSync, spawnSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
+// A roomy fake machine so spawn checks do not depend on the memory and CPU of the box running the tests.
+const ROOMY = JSON.stringify({ cores: 16, load1: 1, totalMB: 65536, availMB: 48000, agentProcs: 1, agentRssMB: 400 });
+if (!process.env.AWK_MACHINE) process.env.AWK_MACHINE = ROOMY;
 // Fake credentials are built at runtime so this file never contains one.
 const FAKE = {
   aws: 'AKIA' + 'Q'.repeat(16),
@@ -47,4 +50,4 @@ function decision(r) {
   return h.permissionDecision || (h.additionalContext ? 'warn' : 'allow');
 }
 
-module.exports = { ROOT, FAKE, tmpRepo, runHook, decision };
+module.exports = { ROOMY, ROOT, FAKE, tmpRepo, runHook, decision };

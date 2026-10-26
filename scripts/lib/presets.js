@@ -5,7 +5,7 @@
  * .agents/config.json, then the preset, then the built-in default.
  */
 const LITE_SKILLS = ['safe-change', 'self-review', 'debug', 'git-workflow', 'handoff'];
-const LEAN_SKILLS = [...LITE_SKILLS, 'context-budget', 'delegate', 'plan', 'bug-intake'];
+const LEAN_SKILLS = [...LITE_SKILLS, 'context-budget', 'delegate', 'plan', 'discover', 'bug-intake'];
 
 const PRESETS = {
   auto: {
@@ -33,7 +33,7 @@ const PRESETS = {
   },
   'low-tokens': {
     label: 'low-tokens',
-    pitch: 'Cheapest sessions. Short replies, no sub-agents unless a task needs wide reading, small context, nine core skills.',
+    pitch: 'Cheapest sessions. Short replies, no sub-agents unless a task needs wide reading, small context, ten core skills.',
     profile: 'standard',
     replyStyle: 'caveman-lite',
     limits: { maxParallel: 1, maxSpawns: 2, smallRepoFiles: 100000 },

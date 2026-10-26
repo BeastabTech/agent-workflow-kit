@@ -9,6 +9,8 @@
  *                                                            size the problem FIRST: mode, model tier, agents, review
  *   budget.js plan --agents 6 [--parallel 3] [--brief-chars 2000]
  *                                                            check a plan BEFORE spawning; prints warnings
+ *   budget.js machine                                        free memory, CPU load, agents already running:
+ *                                                            how many agents this laptop can run at once NOW
  *   budget.js status [--session <id>]                        agents started, running, estimated tokens
  *
  * Limits come from "limits" in .agents/config.json. Token numbers are estimates.
@@ -51,6 +53,10 @@ function main() {
   const out = (s) => process.stdout.write(s + '\n');
   if (cmd === 'limits') {
     out(Object.entries(limits).map(([key, v]) => `${key}: ${v}`).join('\n'));
+  } else if (cmd === 'machine') {
+    const m = B.machine(limits);
+    out(m ? m.text : 'Machine check is off (limits.machineCheck 0 or AWK_MACHINE=off).');
+    if (m) out(`Next: budget.js plan --agents <n> --parallel ${m.fit.pressure === 'high' ? 1 : m.fit.parallel}`);
   } else if (cmd === 'triage') {
     let nums = a;
     let why = null;
@@ -63,10 +69,17 @@ function main() {
     if (why) out(why);
     out(`Size ${t.size} (${t.preset}): ${t.mode}. Model: ${t.model}. Agents: ${t.agents}. Review: ${t.review}.`);
     for (const n of t.notes) out(`Note: ${n}`);
-    if (t.agents) out('Next: budget.js plan --agents ' + t.agents);
+    if (t.agents) {
+      const m = B.machine(limits);
+      if (m) out(m.text);
+      if (m && (m.fit.pressure === 'high' || m.fit.parallel < t.agents)) out(`Note: run at most ${m.fit.pressure === 'high' ? 1 : m.fit.parallel} at once on this machine; the rest wait for a free slot.`);
+      out('Next: discuss with the user and get their yes on the plan (discover skill), then budget.js plan --agents ' + t.agents);
+    }
   } else if (cmd === 'plan') {
-    const p = B.plan(limits, { agents: a.agents, parallel: a.parallel, briefChars: a.briefChars });
+    const m = B.machine(limits);
+    const p = B.plan(limits, { agents: a.agents, parallel: a.parallel, briefChars: a.briefChars, machine: m });
     out(`Plan: ${p.agents} agent(s), ${p.parallel} at once, ${k(p.estTokens)} tokens estimated (assumes ${k(limits.assumedAgentTokens)} per agent).`);
+    if (m) out(m.text);
     out(p.warnings.length ? p.warnings.map((w) => `WARNING: ${w}`).join('\n') + '\nShow these to the user before spawning.' : 'Within limits.');
   } else if (cmd === 'status') {
     const sid = a.session && a.session !== true ? a.session : latestSession(cfg.root);

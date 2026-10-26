@@ -29,6 +29,8 @@ All hooks are plain Node.js with no dependencies. They **fail open**: broken inp
 | `destructive-db` | `prisma migrate reset`, `prisma db push`, `db:reset/push/drop` scripts, `DROP TABLE/DATABASE/SCHEMA`, `TRUNCATE`, `DELETE FROM x` without `WHERE`, `rails db:drop`, django `flush`, `dropDatabase()`, `FLUSHALL`, `dropdb`, ORM schema drop, `knex migrate:rollback --all`, `terraform destroy` | deny (or ask with `"destructiveDb": "ask"`) | no |
 | `protected-files` | edit of a path matching `protectedFiles` | ask | yes |
 | `env-files` | edit of `.env`, `.env.local` and similar (not `.env.example`) | ask | no |
+| `plan-gate` | starting a worker sub-agent (not explorer, planner or reviewer) in a project with `.agents/config.json` | ask until `.agents/PLAN.md` says `Status: approved`; off in `minimal` and with `planGate: false` | yes |
+| `machine-check` | starting a sub-agent | reads free memory, CPU load and running agent processes; asks when the spawn would run more agents at once than the machine can take, warns on the first agent under high pressure | no (defaults apply) |
 | `agent-budget` | starting a sub-agent | warn from `warnAtPct` of a limit, a repeated or oversized brief; a warning when an `explorer` starts in a repo under `smallRepoFiles` tracked files; ask when `maxParallel`, `maxSpawns` or `tokenBudget` would be crossed | no (defaults apply) |
 
 ### Done gate

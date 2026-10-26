@@ -155,7 +155,7 @@ test('profiles: minimal skips the soft checks, strict hardens them, unknown fall
 });
 
 test('profiles: strict turns a spawn-budget warning into a question', () => {
-  const { dir } = tmpRepo({ limits: { maxSpawns: 4, maxParallel: 10 } });
+  const { dir } = tmpRepo({ planGate: false, limits: { maxSpawns: 4, maxParallel: 10 } });
   const spawn = (env) => runHook('pre-agent', { session_id: 'p', cwd: dir, tool_input: { description: 'd', prompt: 'x' + Math.random() } }, env);
   spawn({});
   spawn({});

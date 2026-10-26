@@ -7,6 +7,8 @@ It gives a repo:
 - **Short project memory.** A small `AGENTS.md` index plus one-topic docs that agents open only when needed.
 - **Team rules in the repo, not in someone's personal memory.** Never-break rules, git and approval rules, code comments, Definition of Done with evidence.
 - **Safe ways to work.** Safe-change and self-review checklists, peer review, bug intake, TDD, debugging.
+- **Talk first, then build.** The manager reads the code, asks you one question at a time, offers two or three approaches, writes the plan in `.agents/PLAN.md` and waits for your yes. Worker agents ask you before that plan is approved, and the manager stops for you on real decisions (`discover` skill).
+- **Sized for your laptop.** Before spawning, the kit reads free memory, CPU load and the agent sessions already running, and runs only as many agents at once as the machine can take (`budget.js machine`). Under memory or CPU pressure it works solo and asks you before another agent starts, so the laptop and the agent app stay responsive.
 - **Several agents at once.** A manager and workers, one state owner, file claims, and agent-to-agent messages (through the manager or directly). It works in one shared checkout or in separate git worktrees. You talk to the manager; it relays instructions to any worker, shows who is doing what, and you can still open a worker's session yourself.
 - **A spawn budget.** Limits on sub-agents running at once and per session, a plan check before anything starts, and a warning (or a question to you) before a limit is crossed.
 - **A closer.** After the workers finish, one agent checks the whole feature, fixes clear small gaps, asks you only for real decisions and reports to the manager.
@@ -67,7 +69,7 @@ The install asks which one you want. Pick by the work, not the biggest one. Deta
 | Edition | For | What changes |
 |---|---|---|
 | `lite` | quick fixes, small projects | safety net only, compact `AGENTS.md`, 5 skills, no plugin needed |
-| `low-tokens` | cutting cost | short replies, solo unless the problem is big, 9 skills, no plugin needed |
+| `low-tokens` | cutting cost | short replies, solo unless the problem is big, 10 skills, no plugin needed |
 | `auto` | let the kit decide | sizes each task from your words and the repo, then acts like low-tokens, normal or best |
 | `normal` (default) | most work | all skills and hooks, sub-agents only where they pay off |
 | `best` | work you want reviewed hard | strict hooks, a test run and a test file required before done, independent review of risky code, closeout |
@@ -128,7 +130,7 @@ More: [docs/FLOW.md](docs/FLOW.md).
 |---|---|
 | Setup and memory | `init`, `docs-sync`, `context-budget`, `lessons`, `caveman` |
 | Several agents | `manager`, `state-keeper`, `agent-comms`, `handoff`, `peer-review`, `team-message`, `team-status` |
-| Everyday engineering | `plan`, `tdd`, `debug`, `bug-intake`, `safe-change`, `self-review`, `closeout`, `git-workflow` |
+| Everyday engineering | `discover`, `plan`, `tdd`, `debug`, `bug-intake`, `safe-change`, `self-review`, `closeout`, `git-workflow` |
 | Low-context delegation and loops | `delegate`, `loop` |
 | Backend and data | `api-design`, `db-migration`, `file-uploads`, `timezones-i18n`, `ai-feature`, `security-audit` |
 | Frontend and apps | `frontend-design`, `responsive-ui`, `html-page`, `design-review`, `webapp-testing`, `mobile-app` |

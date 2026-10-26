@@ -19,7 +19,7 @@ Target: `$ARGUMENTS` (default: the current repo root).
 
 0. **Which edition?** Ask this first, as a single choice, with your recommendation (`normal` unless they say otherwise):
    - `lite`: safety net only, least overhead; compact `AGENTS.md`, five core skills, git hooks, no plugin needed.
-   - `low-tokens`: cheapest sessions; short replies, solo unless the problem is big, nine core skills, no plugin needed.
+   - `low-tokens`: cheapest sessions; short replies, solo unless the problem is big, ten core skills, no plugin needed.
    - `auto`: the kit sizes each task itself and behaves like low-tokens, normal or best as needed (good if they do not want to choose).
    - `normal`: balanced default; full skills and hooks, solo for small work, self-review before done.
    - `best`: strictest, more tokens; strict hooks, a test run and a test file before done, independent review of risky code, closeout on multi-part work.

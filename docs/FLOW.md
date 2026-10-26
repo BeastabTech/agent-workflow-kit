@@ -27,6 +27,14 @@ sequenceDiagram
     participant B as Worker B
     participant S as State owner
     H->>M: goal + constraints
+    M->>M: read the code (no sub-agents yet)
+    M->>H: what I understood + one question
+    H->>M: answer (repeat until nothing open)
+    M->>H: two or three approaches, one recommended
+    H->>M: pick
+    M->>M: PLAN.md draft, budget.js triage, machine, plan
+    M->>H: plan, agents, waves sized to free RAM and CPU: go?
+    H->>M: "yes" (PLAN.md Status: approved)
     M->>A: brief (scope, files, done criteria)
     M->>B: brief
     A->>B: claim src/api/login.* (via LOG.md or tool messaging)

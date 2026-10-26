@@ -208,6 +208,7 @@ function init(opts) {
   sources.push([path.join(KIT, 'scripts', 'lib', 'config.js'), '.agents/tools/lib/config.js']);
   sources.push([path.join(KIT, 'scripts', 'lib', 'budget.js'), '.agents/tools/lib/budget.js']);
   sources.push([path.join(KIT, 'scripts', 'lib', 'presets.js'), '.agents/tools/lib/presets.js']);
+  sources.push([path.join(KIT, 'scripts', 'lib', 'resources.js'), '.agents/tools/lib/resources.js']);
   if (n.gitHooks) {
     sources.push([path.join(KIT, 'scripts', 'git-guard.js'), '.agents/tools/git-guard.js']);
     sources.push([path.join(KIT, 'scripts', 'lib', 'secrets.js'), '.agents/tools/lib/secrets.js']);
@@ -317,7 +318,7 @@ function init(opts) {
   }
 
   const ignore = ['.agents/LOG.md', '.agents/.read/', '.agents/.budget/', '.agents/.loops/', '.agents/.gate/'];
-  if (n.stateSync !== 'git') ignore.push('.agents/STATE.md', '.agents/HANDOFF.md', '.agents/BUGS.md');
+  if (n.stateSync !== 'git') ignore.push('.agents/STATE.md', '.agents/HANDOFF.md', '.agents/BUGS.md', '.agents/PLAN.md');
   report.gitignore = ensureGitignore(target, ignore, dry);
   return report;
 }

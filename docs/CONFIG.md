@@ -25,6 +25,11 @@
 | `limits.maxLoopRounds` | `8` | Rounds of one loop before it must stop (`loop.js`) |
 | `limits.stuckRepeats` | `2` | The same failure this many rounds in a row ends a loop |
 | `limits.smallRepoFiles` | `400` | Starting an `explorer` in a repo with fewer tracked files warns (asks in `strict`); `0` turns it off |
+| `limits.machineCheck` | `1` | Cap agents running at once by free memory and CPU load; `0` turns it off (`AWK_MACHINE=off` for one shell) |
+| `limits.agentMemMB` | `600` | Memory one running agent or session needs, its tools and test runs included |
+| `limits.memReserveMB` | `2048` | Memory always left for the OS and your apps (at least 15% of RAM is kept either way) |
+| `limits.cpuPerAgent` | `1` | Idle CPU cores one running agent needs |
+| `planGate` | `true` | Worker agents ask you until `.agents/PLAN.md` says `Status: approved`; `false` turns it off |
 | `limits.maxFixRounds` | `2` | Fix rounds for the closer and reviewers (rule text only) |
 | `profile` | `standard` | `minimal`, `standard` or `strict` (see below) |
 | `tools` | all | Which agent adapters `init` wrote |

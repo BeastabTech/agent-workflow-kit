@@ -2,10 +2,14 @@
 'use strict';
 /**
  * PreToolUse guard for the Agent (Task) tool: counts sub-agent spawns and warns before there are
- * too many, too many at once, or a brief that is too big. Crossing a limit asks the human;
- * everything else is a warning the manager passes on. Any internal error lets the spawn through.
+ * too many, too many at once, more than the machine's free memory and CPU can take, or a brief
+ * that is too big. A worker started before the user approved a plan (.agents/PLAN.md) asks the
+ * human. Crossing a limit asks the human; everything else is a warning the manager passes on.
+ * Any internal error lets the spawn through.
  */
-const { loadConfig, enabled } = require('../lib/config');
+const fs = require('fs');
+const path = require('path');
+const { loadConfig, enabled, sharedRoot } = require('../lib/config');
 const B = require('../lib/budget');
 const { readInput, respondPreToolUse } = require('../lib/hook-io');
 
@@ -16,6 +20,18 @@ function trackedFiles(root) {
     return out.split('\n').filter(Boolean).length;
   } catch (_) {
     return -1;
+  }
+}
+
+// Agents that only read or review; anything else is a worker that changes things.
+const READ_ONLY = /(^|:)(explorer|planner|reviewer|security-reviewer|explore|plan|claude-code-guide)$/i;
+
+/** True when .agents/PLAN.md says `Status: approved` (written only after the user's yes). */
+function planApproved(cwd) {
+  try {
+    return /^\s*Status:\s*approved\b/im.test(fs.readFileSync(path.join(sharedRoot(cwd), '.agents', 'PLAN.md'), 'utf8'));
+  } catch (_) {
+    return false;
   }
 }
 
@@ -36,6 +52,25 @@ function main() {
     B.save(cfg.root, sid, state);
   } catch (_) {}
   const findings = [];
+  const type = String(ti.subagent_type || 'general-purpose');
+  const cwd = input.cwd || process.cwd();
+  if (enabled(cfg, 'plan-gate') && cfg.planGate !== false && cfg.hasTeamConfig && !READ_ONLY.test(type) && !planApproved(cwd)) {
+    findings.push({ level: 'ask', check: 'plan-gate', reason: `A worker agent (${type}) is about to start, but .agents/PLAN.md has no "Status: approved". Talk to the user first (discover skill): what they want, the approach, the task split and how many agents; write the plan and set Status: approved only after their yes. Read-only helpers (explorer, planner, reviewer) do not need it.` });
+  }
+  let m = null;
+  try {
+    m = B.machine(limits);
+  } catch (_) {}
+  if (m && enabled(cfg, 'machine-check')) {
+    const running = B.summary(state, limits).active; // includes this spawn
+    if (m.fit.pressure === 'high' && running > 1) {
+      findings.push({ level: 'ask', check: 'machine-check', reason: `${m.text} This would be agent ${running} running at once. Wait for one to finish or do the work yourself.` });
+    } else if (running > m.fit.parallel) {
+      findings.push({ level: 'ask', check: 'machine-check', reason: `This would be agent ${running} running at once; this machine can take ${m.fit.parallel} now. ${m.text} Start it after one finishes.` });
+    } else if (m.fit.pressure === 'high') {
+      findings.push({ level: 'warn', check: 'machine-check', reason: `${m.text} Keep to this one agent until memory or CPU frees up.` });
+    }
+  }
   if (/(^|:)explorer$/.test(String(ti.subagent_type || '')) && limits.smallRepoFiles > 0) {
     const n = trackedFiles(cfg.root);
     if (n >= 0 && n < limits.smallRepoFiles) {

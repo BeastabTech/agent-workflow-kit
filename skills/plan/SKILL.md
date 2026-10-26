@@ -11,7 +11,7 @@ description: Plan a feature or change before writing code - restate the goal, re
 - Search before you build: an existing helper, library or pattern in the repo beats new code.
 
 ## 2. Ask
-One numbered message with every blocking question, each with your recommended answer and why. Wait.
+If the request leaves something that matters open, run the `discover` skill first: one question at a time, two or three approaches, the user picks. For a small gap, one numbered message with every blocking question, each with your recommended answer and why. Wait.
 
 ## 3. Plan (keep it to one screen)
 
@@ -26,8 +26,10 @@ Contracts touched: <APIs, events, schema; additive only>
 Flag: <NAME> (default off) · Rollout: <order of deploys> · Rollback: <how>
 Risks: <data, security, performance, other teams>
 Parallel: <steps that can run in separate agents/worktrees; steps that must be sequential>
+Agents: <count, at most `budget.js machine` at once; waves>
+User stops: <where the user must decide or approve>
 Out of scope: <what you will not do>
 ```
 
 ## 4. Wait for OK
-Do not write code until the owner agrees. If the work splits into independent steps, offer to run them as separate agents (see the `manager` skill).
+Do not write code until the owner agrees. In a kit project save the plan in `.agents/PLAN.md` and set `Status: approved` only after their typed yes; worker agents ask the human until then. If the work splits into independent steps, offer to run them as separate agents (see the `manager` skill).

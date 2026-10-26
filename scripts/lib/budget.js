@@ -21,6 +21,10 @@ const DEFAULT_LIMITS = {
   maxLoopRounds: 8, // rounds of one loop (fix until green, review and fix) before it must stop
   stuckRepeats: 2, // the same failure this many rounds in a row ends a loop
   smallRepoFiles: 400, // an explorer in a repo with fewer tracked files is a net loss: warn (0 = never)
+  machineCheck: 1, // 1 = cap parallel agents by free memory and CPU load (resources.js); 0 = off
+  agentMemMB: 600, // memory one running agent or session needs, tools and test runs included
+  memReserveMB: 2048, // memory always left for the OS and the user's apps (at least 15% of RAM)
+  cpuPerAgent: 1, // idle CPU cores one running agent needs
 };
 
 function limitsFrom(cfg) {
@@ -122,6 +126,22 @@ function finish(state, type) {
   return Boolean(hit);
 }
 
+/** Machine reading and safe parallel count, or null when the check is off. AWK_MACHINE=off disables it; a JSON value fakes the reading (tests). */
+function machine(limits) {
+  const env = String(process.env.AWK_MACHINE || '').trim();
+  if (!limits.machineCheck || /^(off|0|false)$/i.test(env)) return null;
+  const R = require('./resources');
+  let fake = null;
+  if (env.startsWith('{')) {
+    try {
+      fake = JSON.parse(env);
+    } catch (_) {}
+  }
+  const snap = R.snapshot(fake);
+  const fit = R.safeParallel(snap, limits);
+  return { snap, fit, text: R.describe(snap, fit) };
+}
+
 /** Preflight for the manager: plan before spawning anything. */
 function plan(limits, p) {
   const agents = Math.max(0, Number(p.agents) || 0);
@@ -134,7 +154,10 @@ function plan(limits, p) {
   if (limits.maxParallel && parallel > limits.maxParallel) warnings.push(`${parallel} at once is over the parallel limit of ${limits.maxParallel}. Run in waves.`);
   if (limits.tokenBudget && est > limits.tokenBudget) warnings.push(`Estimated ~${Math.round(est / 1000)}k tokens is over the budget of ${Math.round(limits.tokenBudget / 1000)}k.`);
   if (agents > 1 && parallel === 1) warnings.push('Agents run one after another: check that they really depend on each other, otherwise run them in parallel.');
-  return { agents, parallel, briefChars, estTokens: est, warnings, limits };
+  const m = p.machine;
+  if (m && m.fit.pressure === 'high') warnings.push('The machine is under pressure: run nothing in parallel, work solo or one agent at a time.');
+  else if (m && parallel > m.fit.parallel) warnings.push(`${parallel} at once is more than this machine can take now (${m.fit.parallel}, limited by ${m.fit.limitedBy}). Run in waves of ${m.fit.parallel}.`);
+  return { agents, parallel, briefChars, estTokens: est, warnings, limits, safeParallel: m ? m.fit.parallel : null };
 }
 
 const TIERS = { small: 'small/fast model (haiku)', mid: 'mid model (sonnet)', strong: 'strong model (opus)' };
@@ -185,4 +208,4 @@ function triage(t, preset) {
   return { size, mode, agents, model: TIERS[model], review, preset: auto ? 'auto' : name, notes };
 }
 
-module.exports = { triage, DEFAULT_LIMITS, limitsFrom, stateFile, load, save, promptHash, estTokens, summary, evaluate, record, finish, plan, safeId };
+module.exports = { machine, triage, DEFAULT_LIMITS, limitsFrom, stateFile, load, save, promptHash, estTokens, summary, evaluate, record, finish, plan, safeId };

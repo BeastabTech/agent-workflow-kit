@@ -29,7 +29,7 @@ const DEFAULTS = {
 // minimal keeps only the clear safety nets; strict turns warnings and soft asks into hard stops.
 const PROFILES = ['minimal', 'standard', 'strict'];
 const REPLY_STYLES = ['normal', 'caveman-lite', 'caveman-full'];
-const MINIMAL_OFF = new Set(['done-gate', 'explicit-staging', 'protected-branch', 'protected-files', 'env-files', 'agent-budget']);
+const MINIMAL_OFF = new Set(['done-gate', 'explicit-staging', 'protected-branch', 'protected-files', 'env-files', 'agent-budget', 'plan-gate']);
 
 function git(args, cwd) {
   try {
