@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.1
+
+Review pass over 0.3.0; no new features.
+
+- Plan lifecycle: the manager sets `Status: done` in `.agents/PLAN.md` after closeout, so the next goal is gated again instead of riding the first approval for the life of the repo. The `discover` and `plan` skills keep the template's `Status:` line; the plan-skill chat block is for projects without `.agents/`.
+- Worktrees: the plan gate reads `PLAN.md` in the current checkout first, then the main checkout.
+- Read-only agents with any prefix or hyphenated name (`ecc:code-reviewer`, `code-explorer`, `architect`, `analyzer`, `guide`) pass the plan gate; only agents that change things are gated.
+- A spawn that ends in a question is no longer counted as running, so a declined spawn leaves no phantom agent that makes later checks ask too early.
+- `planGate: "false"` or `0` in `.agents/config.json` turn the gate off; the session-start note about discovering first appears only when the gate is on.
+- `low-tokens` (one agent at a time) gets one question from the budget check, not a second one from the machine check.
+- Running agent sessions are detected by the command path (`claude`, `codex`, `gemini`, or node running `claude-code` / `gemini-cli`), paths with spaces included; the desktop app's helper processes and wrapper processes no longer count.
+- Skill text aligned: one question at a time during discovery, batched once the plan runs; read the code yourself, an explorer only for dozens of file reads. New eval `discover-fires`. Templates, planner agent and docs mention `PLAN.md` and `budget.js machine`.
+
 ## 0.3.0
 
 - Talk first, then build: new `discover` skill. The agent reads the code itself, restates the request, asks one question at a time with its recommendation, offers two or three approaches for the user to pick, writes a one-screen plan and waits for the user's yes. It lists the stop points where a running plan must wait for the user (scope choices, hard-to-undo actions, a broken plan, machine pressure) and decides the rest itself.

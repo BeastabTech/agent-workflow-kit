@@ -1,8 +1,8 @@
 {
   "name": "agent-workflow-kit",
   "displayName": "Agent Workflow Kit",
-  "version": "0.3.0",
-  "description": "A team workflow for coding agents: short project memory, rules, safe-change and self-review checklists, manager/worker orchestration with a state owner, agent-to-agent messaging, hand-off and resume, bug intake, team hand-off messages, cloud ops, and safety hooks.",
+  "version": "0.3.1",
+  "description": "A team workflow for coding agents: short project memory, rules, safe-change and self-review checklists, discuss-first planning with the user's approval, manager/worker orchestration sized to the machine's free memory and CPU, with a state owner, agent-to-agent messaging, hand-off and resume, bug intake, team hand-off messages, cloud ops, and safety hooks.",
   "author": {
     "name": "BeastabTech",
     "url": "https://github.com/BeastabTech"

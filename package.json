@@ -1,6 +1,6 @@
 {
   "name": "agent-workflow-kit",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "Development scripts for the kit itself. The kit has no runtime dependencies.",
   "license": "MIT",
