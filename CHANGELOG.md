@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+- Talk first, then build: new `discover` skill. The agent reads the code itself, restates the request, asks one question at a time with its recommendation, offers two or three approaches for the user to pick, writes a one-screen plan and waits for the user's yes. It lists the stop points where a running plan must wait for the user (scope choices, hard-to-undo actions, a broken plan, machine pressure) and decides the rest itself.
+- Plan gate: `.agents/PLAN.md` (new template) holds the agreed plan. A worker sub-agent started before it says `Status: approved` asks the human; read-only helpers (explorer, planner, reviewer) are not gated. Off with `planGate: false`, `AWK_DISABLE=plan-gate` or the `minimal` profile.
+- Machine check: `scripts/lib/resources.js` reads free memory (vm_stat on macOS, MemAvailable on Linux), CPU load and the coding-agent processes already running, and works out how many agents the machine can run at once. `budget.js machine` prints it; `budget.js plan` and `triage` cap parallel work by it; the spawn hook asks before a spawn would go over it and warns under high pressure; the session-start note shows it. New limits: `machineCheck`, `agentMemMB`, `memReserveMB`, `cpuPerAgent`. `AWK_MACHINE=off` turns it off for one shell.
+- The `manager` skill now runs in a fixed order: resume, discover with the user, size and split, check the machine and the budget, get the yes, then spawn in waves and re-check the machine before each wave. `plan` and `delegate` point to the same steps; `low-tokens` also exports `discover`.
+
 ## 0.2.1
 
 - Done gate: a Stop hook that, after code edits, requires a test run and a test file before the agent may finish; capped at two blocks per session. Only the `best` edition uses it (in the benchmarks it cost 20 to 90 percent more tokens on small tasks for no change in results, so `normal`, `auto` and `low-tokens` do not).
