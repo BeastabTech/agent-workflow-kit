@@ -9,8 +9,10 @@ function main() {
   const input = readInput();
   const cfg = loadConfig(input.cwd || process.cwd());
   if (cfg.hooksOff) process.exit(0);
-  const state = B.load(cfg.root, input.session_id);
-  if (B.finish(state, input.agent_type)) B.save(cfg.root, input.session_id, state);
+  B.withLock(cfg.root, input.session_id, () => {
+    const state = B.load(cfg.root, input.session_id);
+    if (B.finish(state, input.agent_type, input.agent_id)) B.save(cfg.root, input.session_id, state);
+  });
 }
 
 if (require.main === module) {

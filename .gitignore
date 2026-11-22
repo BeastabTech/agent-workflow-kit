@@ -3,3 +3,4 @@ evals/results/
 .webapp-smoke/
 .DS_Store
 *.log
+.agents/.budget/

@@ -86,7 +86,7 @@ function main() {
     const state = sid ? B.load(cfg.root, sid) : { spawns: [] };
     const s = B.summary(state, limits);
     out(`Session ${sid || '(none yet)'}: ${s.total} started (limit ${limits.maxSpawns}), ${s.active} running (limit ${limits.maxParallel}), ${k(s.estTokens)} tokens estimated${limits.tokenBudget ? ` of ${k(limits.tokenBudget)}` : ''}.`);
-    for (const x of state.spawns) out(`- ${x.done ? 'done   ' : 'running'} ${x.type} · ${x.model} · ${x.name || '(no description)'} · ${k(x.est || 0)}`);
+    for (const x of state.spawns) out(`- ${x.done ? 'done   ' : x.pending ? 'asked  ' : 'running'} ${x.type} · ${x.model} · ${x.name || '(no description)'} · ${k(x.est || 0)}`);
   } else {
     out(fs.readFileSync(__filename, 'utf8').split('*/')[0].replace(/^#!.*\n'use strict';\n\/\*\*/, '') + '*/');
     process.exitCode = cmd ? 1 : 0;

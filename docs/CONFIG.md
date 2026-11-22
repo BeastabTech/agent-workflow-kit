@@ -54,7 +54,7 @@ Set when enabling the plugin (stored in your own Claude Code settings, not the r
 | Variable | Effect |
 |---|---|
 | `AWK_HOOKS=off` | Turn every kit hook and the git guard off for this shell |
-| `AWK_DISABLE=a,b` | Turn off named checks: `ai-trailers`, `secret-scan`, `explicit-staging`, `force-push`, `protected-branch`, `destructive-db`, `protected-files`, `env-files`, `agent-budget` |
+| `AWK_DISABLE=a,b` | Turn off named checks: `ai-trailers`, `secret-scan`, `explicit-staging`, `force-push`, `protected-branch`, `destructive-db`, `protected-files`, `env-files`, `agent-budget`, `plan-gate`, `machine-check`, `done-gate` |
 | `AWK_PROFILE=minimal\|standard\|strict` | Hook profile for this shell. Order: this variable, the plugin option, `profile` in `.agents/config.json`, then `standard` |
 | `AWK_SHARED_DIR=/path` | Message log and state folder override |
 
@@ -66,7 +66,7 @@ Set when enabling the plugin (stored in your own Claude Code settings, not the r
 
 | Profile | What changes |
 |---|---|
-| `minimal` | Only the clear safety nets run: `ai-trailers`, `secret-scan`, `force-push`, `destructive-db`. Off: `explicit-staging`, `protected-branch`, `protected-files`, `env-files`, `agent-budget` |
+| `minimal` | Only the clear safety nets run: `ai-trailers`, `secret-scan`, `force-push`, `destructive-db`. Off: `explicit-staging`, `protected-branch`, `protected-files`, `env-files`, `agent-budget`, `plan-gate`, `machine-check`, `done-gate` |
 | `standard` | Everything described in [HOOKS.md](HOOKS.md) (default) |
 | `strict` | Standard, plus: `git add -A` and `commit -a` are denied in worktree mode too; a value that only looks like a secret is denied instead of asked; every spawn-budget warning becomes a question to you |
 

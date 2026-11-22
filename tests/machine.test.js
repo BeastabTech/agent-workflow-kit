@@ -227,3 +227,98 @@ test('init: PLAN.md is gitignored only when state is not synced through git', ()
   init({ target: l, tools: 'claude', answers });
   assert.match(fs.readFileSync(path.join(l, '.gitignore'), 'utf8'), /\.agents\/PLAN\.md/);
 });
+
+const status = (dir, session) => spawnSync('node', [path.join(ROOT, 'scripts', 'agent-budget.js'), 'status', '--session', session], { cwd: dir, encoding: 'utf8' }).stdout;
+const started = (dir, session, type, id) => runHook('subagent-start', { session_id: session, cwd: dir, agent_type: type, agent_id: id });
+const stopped = (dir, session, type, id) => runHook('subagent-stop', { session_id: session, cwd: dir, agent_type: type, agent_id: id });
+
+test('a spawn the human approves after a question is counted, and its stop frees its own slot', () => {
+  const { dir } = tmpRepo({ planGate: false, limits: { smallRepoFiles: 0, maxParallel: 10, maxSpawns: 50 } });
+  const env = { AWK_MACHINE: JSON.stringify(box({ availMB: 4000 })) }; // 2 at once
+  assert.equal(decision(spawn(dir, 'ap', 'reviewer', env)), 'allow');
+  started(dir, 'ap', 'reviewer', 'a1');
+  assert.equal(decision(spawn(dir, 'ap', 'reviewer', env)), 'allow');
+  started(dir, 'ap', 'reviewer', 'a2');
+  assert.equal(decision(spawn(dir, 'ap', 'reviewer', env)), 'ask');
+  assert.match(status(dir, 'ap'), /2 started.*2 running/);
+  started(dir, 'ap', 'reviewer', 'a3'); // the human said yes
+  assert.match(status(dir, 'ap'), /3 started.*3 running/);
+  started(dir, 'ap', 'reviewer', 'a3'); // a repeated event changes nothing
+  assert.match(status(dir, 'ap'), /3 started.*3 running/);
+  stopped(dir, 'ap', 'reviewer', 'a3');
+  assert.match(status(dir, 'ap'), /3 started.*2 running/);
+  stopped(dir, 'ap', 'reviewer', 'a1');
+  stopped(dir, 'ap', 'reviewer', 'a2');
+  assert.match(status(dir, 'ap'), /3 started.*0 running/);
+});
+
+test('a declined spawn stays uncounted: the next start and stop belong to the counted agents', () => {
+  const { dir } = tmpRepo({ planGate: false, limits: { smallRepoFiles: 0, maxParallel: 10, maxSpawns: 50 } });
+  const tight = { AWK_MACHINE: JSON.stringify(box({ availMB: 1500 })) }; // pressure high: a second agent asks
+  assert.equal(decision(spawn(dir, 'de', 'reviewer', tight)), 'warn');
+  started(dir, 'de', 'reviewer', 'd1');
+  assert.equal(decision(spawn(dir, 'de', 'reviewer', tight)), 'ask'); // declined: no start follows
+  assert.match(status(dir, 'de'), /1 started.*1 running/);
+  assert.match(status(dir, 'de'), /asked/);
+  stopped(dir, 'de', 'reviewer', 'd1');
+  assert.match(status(dir, 'de'), /1 started.*0 running/);
+  assert.equal(decision(spawn(dir, 'de', 'reviewer')), 'allow'); // roomy machine again
+  started(dir, 'de', 'reviewer', 'd2'); // goes to the counted spawn, not the old question
+  assert.match(status(dir, 'de'), /2 started.*1 running/);
+});
+
+test('without SubagentStart (older tools) a stop takes the approved spawn first, so the count is never too low', () => {
+  const { dir } = tmpRepo({ planGate: false, limits: { smallRepoFiles: 0, maxParallel: 10, maxSpawns: 50 } });
+  const env = { AWK_MACHINE: JSON.stringify(box({ availMB: 4000 })) };
+  spawn(dir, 'old', 'reviewer', env);
+  spawn(dir, 'old', 'reviewer', env);
+  assert.equal(decision(spawn(dir, 'old', 'reviewer', env)), 'ask');
+  runHook('subagent-stop', { session_id: 'old', cwd: dir, agent_type: 'reviewer' });
+  assert.match(status(dir, 'old'), /3 started.*2 running/);
+});
+
+test('agents started in the same message: every hook sees the others, the limit holds', async () => {
+  const { dir } = tmpRepo({ planGate: false, limits: { smallRepoFiles: 0, maxParallel: 4, maxSpawns: 50, warnAtPct: 100 } });
+  const { spawn: run } = require('child_process');
+  const one = (i) =>
+    new Promise((resolve) => {
+      const c = run('node', [path.join(ROOT, 'scripts', 'hooks', 'pre-agent.js')], { env: { ...process.env, AWK_HOOKS: '', AWK_DISABLE: '', AWK_MACHINE: 'off' } });
+      let out = '';
+      c.stdout.on('data', (d) => (out += d));
+      c.on('close', () => resolve(/"ask"/.test(out) ? 'ask' : 'allow'));
+      c.stdin.end(JSON.stringify({ session_id: 'race', cwd: dir, tool_input: { description: 'd', prompt: 'task ' + i, subagent_type: 'reviewer' } }));
+    });
+  const res = await Promise.all([1, 2, 3, 4, 5, 6, 7, 8].map(one));
+  assert.equal(res.filter((r) => r === 'allow').length, 4);
+  assert.equal(res.filter((r) => r === 'ask').length, 4);
+  assert.match(status(dir, 'race'), /4 started.*4 running/);
+  assert.deepEqual(fs.readdirSync(path.join(dir, '.agents', '.budget')).filter((f) => !f.endsWith('.json')), []); // no lock or tmp left
+});
+
+test('AWK_DISABLE=agent-budget leaves the machine check and the plan gate on; each has its own switch', () => {
+  const { dir } = tmpRepo({ limits: { smallRepoFiles: 0 } });
+  const tight = JSON.stringify(box({ availMB: 1500 }));
+  const gated = spawn(dir, 'sw', 'general-purpose', { AWK_DISABLE: 'agent-budget' });
+  assert.equal(decision(gated), 'ask');
+  assert.match(reason(gated), /plan-gate/);
+  assert.equal(decision(spawn(dir, 'sw', 'reviewer', { AWK_DISABLE: 'agent-budget', AWK_MACHINE: tight })), 'warn');
+  const second = spawn(dir, 'sw', 'reviewer', { AWK_DISABLE: 'agent-budget', AWK_MACHINE: tight });
+  assert.equal(decision(second), 'ask');
+  assert.match(reason(second), /machine-check/);
+  assert.equal(decision(spawn(dir, 'sw2', 'reviewer', { AWK_DISABLE: 'agent-budget,machine-check', AWK_MACHINE: tight })), 'allow');
+  assert.equal(decision(spawn(dir, 'sw2', 'reviewer', { AWK_DISABLE: 'agent-budget,machine-check', AWK_MACHINE: tight })), 'allow');
+  // the cap is maxParallel itself and the budget check is off: the machine check speaks up instead
+  const capped = JSON.stringify(box({ availMB: 48000 }));
+  const { dir: d2 } = tmpRepo({ planGate: false, limits: { smallRepoFiles: 0, maxParallel: 1 } });
+  assert.equal(decision(spawn(d2, 'c', 'reviewer', { AWK_DISABLE: 'agent-budget', AWK_MACHINE: capped })), 'allow');
+  assert.match(reason(spawn(d2, 'c', 'reviewer', { AWK_DISABLE: 'agent-budget', AWK_MACHINE: capped })), /machine-check/);
+});
+
+test('minimal profile: no spawn check runs and nothing is counted', () => {
+  const { dir } = tmpRepo({ profile: 'minimal', limits: { smallRepoFiles: 0 } });
+  const tight = { AWK_MACHINE: JSON.stringify(box({ availMB: 1500 })) };
+  assert.equal(decision(spawn(dir, 'min', 'general-purpose', tight)), 'allow');
+  assert.equal(decision(spawn(dir, 'min', 'general-purpose', tight)), 'allow');
+  started(dir, 'min', 'general-purpose', 'm1');
+  assert.equal(fs.existsSync(path.join(dir, '.agents', '.budget')), false);
+});

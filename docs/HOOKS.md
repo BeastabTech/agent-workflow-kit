@@ -7,6 +7,7 @@ All hooks are plain Node.js with no dependencies. They **fail open**: broken inp
 | Bash guard | PreToolUse `Bash` | `scripts/hooks/pre-bash.js` |
 | Edit guard | PreToolUse `Edit`, `Write`, `MultiEdit`, `NotebookEdit` | `scripts/hooks/pre-edit.js` |
 | Spawn budget | PreToolUse `Agent` (also `Task`) | `scripts/hooks/pre-agent.js` |
+| Spawn started | SubagentStart | `scripts/hooks/subagent-start.js` |
 | Spawn finished | SubagentStop | `scripts/hooks/subagent-stop.js` |
 | Done gate | Stop | `scripts/hooks/stop.js` |
 | Session note | SessionStart | `scripts/hooks/session-start.js` |
@@ -39,7 +40,9 @@ When the agent is about to stop after changing code, the Stop hook reads the tra
 
 ### Spawn budget
 
-On every sub-agent start the hook checks, in order: the plan gate (worker agents need `Status: approved` in `.agents/PLAN.md`, read from the current checkout, then the main checkout), the machine (free memory, CPU load, running agent processes: one spawn over the safe count asks; under high pressure the first agent warns and a second asks), then the spawn budget. A spawn that ends in a question is not counted, so a declined spawn leaves no phantom running agent. Every start that goes through is counted per session in `.agents/.budget/<session>.json` (gitignored). SubagentStop marks one as finished so the parallel count stays right. The token figure is an **estimate** (an assumed size per agent plus brief length / 4) meant for early warning. If you decline a spawn the hook already counted it; the count can only be too high, never too low. Managers check a plan first with `node .agents/tools/budget.js plan --agents 6 --parallel 3` and `budget.js status` shows the session. Turn it off with `AWK_DISABLE=agent-budget`.
+On every sub-agent start the hook checks, in order: the plan gate (worker agents need `Status: approved` in `.agents/PLAN.md`, read from the current checkout, then the main checkout), the machine (free memory, CPU load, running agent processes: one spawn over the safe count asks; under high pressure the first agent warns and a second asks), then the spawn budget. Each of the three has its own switch (`plan-gate`, `machine-check`, `agent-budget`); turning one off leaves the other two on.
+
+Counting: a start that goes through is counted per session in `.agents/.budget/<session>.json` (gitignored). A spawn that ends in a question is only noted as asked, not counted, so a declined spawn leaves no phantom running agent. When you say yes, SubagentStart counts it and ties the agent's id to it; SubagentStop then frees that agent's own slot by id. Tools that do not send SubagentStart fall back to matching by agent type, and a stop takes an asked spawn of that type first, so the count can be one too high for a while but not too low. The hooks take a lock file around every read and write of the state, so agents started in the same message are each counted and the limit holds. The token figure is an **estimate** (an assumed size per agent plus brief length / 4) meant for early warning. Managers check a plan first with `node .agents/tools/budget.js plan --agents 6 --parallel 3` and `budget.js status` shows the session. Turn all three off with `AWK_DISABLE=agent-budget,plan-gate,machine-check`.
 
 Commands that only read (`grep`, `rg`, `git log`, `git show`, `git diff`, `man`) are skipped by the destructive-DB check.
 

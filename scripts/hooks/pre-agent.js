@@ -40,35 +40,45 @@ function main() {
   const input = readInput();
   if (!input.tool_input) process.exit(0); // broken or empty input: do not count it
   const ti = input.tool_input;
-  const cfg = loadConfig(input.cwd || process.cwd());
-  if (cfg.hooksOff || !enabled(cfg, 'agent-budget')) process.exit(0);
+  const cwd = input.cwd || process.cwd();
+  const cfg = loadConfig(cwd);
+  if (cfg.hooksOff) process.exit(0);
+  // Three checks, each with its own switch: turning the budget off must not turn the machine check off.
+  const on = { budget: enabled(cfg, 'agent-budget'), gate: enabled(cfg, 'plan-gate'), machine: enabled(cfg, 'machine-check') };
+  if (!on.budget && !on.gate && !on.machine) process.exit(0);
   const limits = B.limitsFrom(cfg);
   const sid = input.session_id;
-  const state = B.load(cfg.root, sid);
   const prompt = String(ti.prompt || '');
   const next = { promptChars: prompt.length, hash: B.promptHash(prompt) };
-  const verdict = B.evaluate(state, limits, next);
-  const findings = [];
   const type = String(ti.subagent_type || 'general-purpose');
-  const cwd = input.cwd || process.cwd();
-  // Count the spawn only when it goes through without a question: a declined spawn never gets a
-  // SubagentStop, and a phantom "running" agent would make every later check ask too early.
+  let m = null;
+  try {
+    if (on.machine) m = B.machine(limits); // read the OS before taking the lock
+  } catch (_) {}
+  // Load, judge and count under one lock: agents started in the same message run this hook at the same time.
+  const findings = B.withLock(cfg.root, sid, () => check({ cfg, cwd, on, limits, sid, ti, type, next, m }));
+  respondPreToolUse(findings);
+}
+
+function check({ cfg, cwd, on, limits, sid, ti, type, next, m }) {
+  const state = B.load(cfg.root, sid);
+  const verdict = on.budget ? B.evaluate(state, limits, next) : { level: 'ok', messages: [], nextEst: limits.assumedAgentTokens + B.estTokens(next.promptChars) };
+  const findings = [];
+  // A spawn that goes through is counted now. One that ends in a question is only noted as pending:
+  // SubagentStart counts it if the human says yes, and a declined one leaves no phantom running agent.
   const commit = () => {
-    if (findings.some((f) => f.level === 'ask') || verdict.level === 'ask') return;
-    B.record(state, { type, model: ti.model || 'inherit', name: String(ti.description || '').slice(0, 60), est: verdict.nextEst, hash: next.hash });
+    const entry = { type, model: ti.model || 'inherit', name: String(ti.description || '').slice(0, 60), est: verdict.nextEst, hash: next.hash };
+    if (findings.some((f) => f.level === 'ask')) B.pend(state, entry);
+    else B.record(state, entry);
     try {
       B.save(cfg.root, sid, state);
     } catch (_) {}
   };
-  if (enabled(cfg, 'plan-gate') && cfg.planGate && cfg.hasTeamConfig && !READ_ONLY.test(type) && !planApproved(cfg, cwd)) {
+  if (on.gate && cfg.planGate && cfg.hasTeamConfig && !READ_ONLY.test(type) && !planApproved(cfg, cwd)) {
     findings.push({ level: 'ask', check: 'plan-gate', reason: `A worker agent (${type}) is about to start, but .agents/PLAN.md has no "Status: approved". Talk to the user first (discover skill): what they want, the approach, the task split and how many agents; write the plan and set Status: approved only after their yes. Read-only helpers (explorer, planner, reviewer) do not need it.` });
   }
-  let m = null;
-  try {
-    m = B.machine(limits);
-  } catch (_) {}
   // limitedBy 'limit' means the cap is maxParallel itself, which the budget check below already asks about.
-  if (m && enabled(cfg, 'machine-check') && m.fit.limitedBy !== 'limit') {
+  if (m && (m.fit.limitedBy !== 'limit' || !on.budget)) {
     const running = B.summary(state, limits).active + 1; // plus this spawn
     if (m.fit.pressure === 'high' && running > 1) {
       findings.push({ level: 'ask', check: 'machine-check', reason: `${m.text} This would be agent ${running} running at once. Wait for one to finish or do the work yourself.` });
@@ -78,7 +88,7 @@ function main() {
       findings.push({ level: 'warn', check: 'machine-check', reason: `${m.text} Keep to this one agent until memory or CPU frees up.` });
     }
   }
-  if (/(^|:)explorer$/.test(String(ti.subagent_type || '')) && limits.smallRepoFiles > 0) {
+  if (on.budget && /(^|:)explorer$/.test(type) && limits.smallRepoFiles > 0) {
     const n = trackedFiles(cfg.root);
     if (n >= 0 && n < limits.smallRepoFiles) {
       findings.push({ level: cfg.profile === 'strict' ? 'ask' : 'warn', check: 'agent-budget', reason: `This repo has ${n} tracked files (under ${limits.smallRepoFiles}). A search here is small enough for git grep; in a measured run an explorer sub-agent cost about 6.7 times the tokens and 4 times the time with no saving in the main context. Do the search yourself unless it needs dozens of file reads.` });
@@ -90,7 +100,7 @@ function main() {
     findings.push({ level: verdict.level === 'ask' || cfg.profile === 'strict' ? 'ask' : 'warn', check: 'agent-budget', reason: verdict.messages.join(' ') + tail });
   }
   commit();
-  respondPreToolUse(findings);
+  return findings;
 }
 
 if (require.main === module) {

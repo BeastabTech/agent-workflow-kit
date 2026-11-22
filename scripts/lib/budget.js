@@ -57,14 +57,53 @@ function load(root, sessionId) {
 function save(root, sessionId, state) {
   const file = stateFile(root, sessionId);
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, JSON.stringify(state));
+  const tmp = `${file}.${process.pid}.tmp`; // write then rename: a reader never sees half a file
+  fs.writeFileSync(tmp, JSON.stringify(state));
+  fs.renameSync(tmp, file);
+}
+
+const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
+/**
+ * Run fn while holding the session's lock file, so hooks that fire at the same moment (several agents
+ * started in one message) each see the others' spawns. A lock older than 5 seconds is a crashed hook
+ * and is removed. If the lock cannot be taken within 3 seconds, fn runs without it: never block a spawn.
+ */
+function withLock(root, sessionId, fn) {
+  const lock = `${stateFile(root, sessionId)}.lock`;
+  let fd = null;
+  try {
+    fs.mkdirSync(path.dirname(lock), { recursive: true });
+  } catch (_) {}
+  const until = Date.now() + 3000;
+  while (fd === null) {
+    try {
+      fd = fs.openSync(lock, 'wx');
+    } catch (e) {
+      if (e.code !== 'EEXIST' || Date.now() > until) break;
+      try {
+        if (Date.now() - fs.statSync(lock).mtimeMs > 5000) fs.unlinkSync(lock);
+        else sleep(10 + Math.floor(Math.random() * 20));
+      } catch (_) {} // the holder just released it: try again
+    }
+  }
+  try {
+    return fn();
+  } finally {
+    if (fd !== null) {
+      try {
+        fs.closeSync(fd);
+        fs.unlinkSync(lock);
+      } catch (_) {}
+    }
+  }
 }
 
 const promptHash = (p) => crypto.createHash('sha1').update(String(p || '').trim().toLowerCase()).digest('hex').slice(0, 10);
 const estTokens = (chars) => Math.ceil(chars / 4);
 
 function summary(state, limits) {
-  const spawns = state.spawns;
+  const spawns = state.spawns.filter((s) => !s.pending); // pending = asked, the human has not said yes yet
   const active = spawns.filter((s) => !s.done);
   const est = spawns.reduce((n, s) => n + (s.est || 0), 0);
   return { total: spawns.length, active: active.length, estTokens: est, limits };
@@ -107,7 +146,7 @@ function evaluate(state, limits, next) {
   if (limits.maxPromptChars && promptChars > limits.maxPromptChars) {
     raise('warn', `The brief is ${promptChars} characters (~${estTokens(promptChars)} tokens). Point to files and docs instead of pasting them; a sub-agent can read them itself.`);
   }
-  if (next && next.hash && state.spawns.some((x) => x.hash === next.hash)) {
+  if (next && next.hash && state.spawns.some((x) => !x.pending && x.hash === next.hash)) {
     raise('warn', 'An agent with the same brief was already started this session. Reuse its result instead of repeating the work.');
   }
   return { level, messages: msgs, nextEst };
@@ -118,11 +157,61 @@ function record(state, entry) {
   return state;
 }
 
-/** Mark the oldest running agent of this type (or the oldest running one) as finished. */
-function finish(state, type) {
-  const running = state.spawns.filter((x) => !x.done);
-  const hit = running.find((x) => type && x.type === type) || running[0];
-  if (hit) hit.done = new Date().toISOString();
+/**
+ * Note a spawn that ended in a question to the human. It is not counted (a declined spawn must not
+ * leave a phantom running agent); start() or finish() counts it once the agent really ran.
+ */
+function pend(state, entry) {
+  const cutoff = Date.now() - 36e5; // an unanswered question older than an hour was declined
+  state.spawns = state.spawns.filter((x) => !x.pending || (x.hash !== entry.hash && Date.parse(x.t) > cutoff));
+  state.spawns.push({ t: new Date().toISOString(), done: false, pending: true, ...entry });
+  return state;
+}
+
+const sameType = (type) => (x) => !type || x.type === type;
+const last = (list) => list[list.length - 1];
+
+/**
+ * SubagentStart: an agent really started, so tie its id to a spawn. First a counted spawn that has no
+ * id yet; if there is none, the human said yes to a question, so the newest pending spawn is counted now.
+ */
+function start(state, type, id) {
+  if (!id) return false;
+  state.ids = true; // this tool sends SubagentStart: finish() can trust ids
+  if (state.spawns.some((x) => x.id === id)) return false;
+  const open = state.spawns.filter((x) => !x.done && !x.id);
+  const counted = open.filter((x) => !x.pending);
+  const pending = open.filter((x) => x.pending);
+  const hit = counted.find(sameType(type)) || last(pending.filter(sameType(type))) || counted[0] || last(pending);
+  if (hit) {
+    if (hit.pending) hit.t = new Date().toISOString();
+    delete hit.pending;
+    hit.id = id;
+  } else {
+    record(state, { type: type || 'unknown', model: 'inherit', name: '(started outside the spawn hook)', est: 0, id });
+  }
+  return true;
+}
+
+/**
+ * SubagentStop: mark the agent as finished. By id when SubagentStart tied one; otherwise the oldest
+ * running agent of this type. Without SubagentStart (older tools) a pending spawn of this type is taken
+ * first: it was approved and ran, and the counted ones are still running.
+ */
+function finish(state, type, id) {
+  const now = new Date().toISOString();
+  const open = state.spawns.filter((x) => !x.done);
+  const running = open.filter((x) => !x.pending);
+  let hit = id ? running.find((x) => x.id === id) : null;
+  if (!hit && !state.ids) {
+    hit = last(open.filter((x) => x.pending && type && x.type === type));
+    if (hit) delete hit.pending;
+  }
+  if (!hit) {
+    const loose = running.filter((x) => !x.id);
+    hit = loose.find((x) => type && x.type === type) || loose[0] || (id ? null : running[0]);
+  }
+  if (hit) hit.done = now;
   return Boolean(hit);
 }
 
@@ -208,4 +297,4 @@ function triage(t, preset) {
   return { size, mode, agents, model: TIERS[model], review, preset: auto ? 'auto' : name, notes };
 }
 
-module.exports = { machine, triage, DEFAULT_LIMITS, limitsFrom, stateFile, load, save, promptHash, estTokens, summary, evaluate, record, finish, plan, safeId };
+module.exports = { machine, triage, DEFAULT_LIMITS, limitsFrom, stateFile, load, save, promptHash, estTokens, summary, evaluate, record, pend, start, finish, withLock, plan, safeId };

@@ -76,7 +76,9 @@ test('pre-agent hook: kill switches and broken input never block', () => {
   spawnIn(dir, 's');
   const env = (e) => runHook('pre-agent', { session_id: 's', cwd: dir, tool_input: { prompt: 'x', description: 'y' } }, e);
   assert.equal(decision(env({})), 'ask');
-  assert.equal(decision(env({ AWK_DISABLE: 'agent-budget' })), 'allow');
+  assert.match(env({ AWK_DISABLE: 'agent-budget' }).stdout, /plan-gate/); // the budget switch leaves the other spawn checks on
+  assert.doesNotMatch(env({ AWK_DISABLE: 'agent-budget' }).stdout, /agent-budget/);
+  assert.equal(decision(env({ AWK_DISABLE: 'agent-budget,plan-gate,machine-check' })), 'allow');
   assert.equal(decision(env({ AWK_HOOKS: 'off' })), 'allow');
   assert.equal(decision(runHook('pre-agent', 'not json')), 'allow');
   assert.equal(runHook('subagent-stop', 'not json').code, 0);
