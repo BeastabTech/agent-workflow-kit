@@ -33,7 +33,7 @@ Nothing starts in parallel until steps 1 to 4 are done. A manager that spawns fi
 | L: several independent parts | A worker per part, different files | mid (strong only for design and risky parts) |
 | XL: big and split | Planner first, workers, then the closer | mid, strong for the hard parts |
 
-Measured: a sub-agent on a small search cost about 6.7 times the tokens for the same answer, so a bigger mode must be earned by a bigger problem. Each running agent or session also costs the laptop around 0.5 GB of memory and a CPU core while it runs tests. Cheap models for reading, docs and well-specified edits; strong models for design and risky logic. Risky areas get an independent reviewer whatever the size. If unsure, start solo and escalate when the context grows. Follow the `delegate` skill: small briefs, small reports, no duplicate agents.
+Measured: a sub-agent on a small search cost about 6.7 times the tokens for the same answer, so a bigger mode must be earned by a bigger problem. Each running agent or session also costs the laptop around 0.5 GB of memory and a CPU core while it runs tests. Cheap models for reading, docs and well-specified edits; strong models for design and risky logic. Risky areas get an independent reviewer whatever the size. If unsure, start solo and escalate when the context grows. Check the inner loop before adding agents: if the project's type check, lint or tests are missing, slow or flaky, fix that first (or tell the user), because more agents on an unreliable loop only produce more unreliable work. Follow the `delegate` skill: small briefs, small reports, no duplicate agents.
 
 ## Split and assign
 

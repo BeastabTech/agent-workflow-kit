@@ -4,6 +4,11 @@
  * Team settings come from <project>/.agents/config.json (committed).
  * Personal settings come from the plugin options (CLAUDE_PLUGIN_OPTION_*).
  * Env switches: AWK_HOOKS=off disables every hook; AWK_DISABLE=check1,check2 disables single checks.
+ *
+ * Order for every setting: environment or plugin option, then the team file, then the edition
+ * (lib/presets.js), then DEFAULTS below. A missing or broken team file is not an error: the defaults
+ * apply and hasTeamConfig is false, which turns off the checks that only make sense for a set-up project.
+ * Also here: localDir(), the one place that creates the kit's machine-local state folders.
  */
 const fs = require('fs');
 const presets = require('./presets');

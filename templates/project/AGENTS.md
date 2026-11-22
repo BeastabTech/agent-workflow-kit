@@ -10,7 +10,7 @@ This file is an **index** for every coding agent and every new developer. Read i
 
 1. **Never break what runs today.** Additive changes only: optional fields, nullable columns, new routes. No renames or removals of public routes, response fields, enum values, events or queues.
 2. **Ask before you build.** Send every blocking question in one numbered message, each with your recommended answer. Stop and ask when something does not match the docs. Multi-step or multi-agent work starts with a plan the human said yes to (`.agents/PLAN.md`, `discover` skill).
-3. **Protected files need the owner's OK** on the exact diff (list in `.agents/config.json`, owners in `docs/context/MODULE_MAP.md`).
+3. **Protected files need the owner's OK** on the exact diff (list in `.agents/config.json`, owners in `docs/context/MODULE_MAP.md`). The same file holds what the team already decided (`mergeFlow`, work mode, commit policy) and, under `unset`, the setup questions nobody was asked yet: when a task needs one of those, ask that one question, save the answer there and remove it from `unset`.
 4. **Small, plain, reusable code.** No god files, no abstraction without a second real use. Shared logic goes in one shared place.
 5. **Side effects fail open and sit behind a flag.** Emails, webhooks and events never fail the main request unless they are the point of it.
 6. **New code is tested.** Changed legacy code gets a smoke test of the old flow.

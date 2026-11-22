@@ -4,8 +4,13 @@
  * Writes the kit's project files into a target repo from templates/project.
  * Never overwrites an existing file unless --force; reports what it wrote and kept.
  *
+ * Besides the files it also: adds the kit's lines to .gitignore and reports lines the owner should
+ * consider (gitignoreSuggest, trackedEnvFiles); takes the base branch from git when not given; lists
+ * settings nobody answered under "unset" in .agents/config.json; and records every file it wrote,
+ * with a hash, in .agents/kit-manifest.json so remove-project.js can undo exactly this.
+ *
  * Usage: node init-project.js --target <dir> [--answers answers.json] [--tools claude,codex,cursor,gemini,copilot]
- *        [--with-git-hooks] [--with-optional] [--force] [--dry-run]
+ *        [--preset lite|low-tokens|auto|normal|best] [--with-git-hooks] [--with-optional] [--force] [--dry-run]
  * Answers (all optional): see templates/answers.example.json
  */
 const fs = require('fs');

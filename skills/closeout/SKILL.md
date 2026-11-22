@@ -24,7 +24,7 @@ For each part:
 - old flow still works (flags off = old behaviour);
 - tests exist, test behaviour, and fail without the change;
 - docs: feature file, env example, API docs, owner headers;
-- leftovers: `git grep -nE --untracked "@todo|@question|console\.log|debugger|TODO|FIXME" -- <changed files>`, dead code, stale docs.
+- leftovers: `git grep -nE --untracked "@todo|@question|console\.log|debugger|TODO|FIXME" -- <changed files>`, dead code, stale docs, and the old pattern this feature replaced still sitting in the tree for the next agent to copy.
 
 Use `explorer` for wide searches, `reviewer` / `security-reviewer` for a fresh read-only opinion, `qa-tester` for user-style testing (bugs go to `.agents/BUGS.md`).
 

@@ -4,6 +4,7 @@
   - `<command>` → <result line, e.g. "42 passed, 0 failed">
   - `<command>` → <result line>
   - Old flow smoke: <what you exercised> → <result>
+  - Seen working: <screenshot or recording path, states exercised, or before/after numbers>  (or "no user-facing change")
 - Not run, and why: <command or check> — <reason>  (or "none")
 - Docs updated: <files>  (or "none needed: <why>")
 - Open items: <@todo / @question left, follow-ups>  (or "none")

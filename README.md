@@ -179,6 +179,10 @@ Off switches: `AWK_HOOKS=off`, `AWK_DISABLE=<check>,<check>`, plugin options, or
 
 ---
 
+## Checks before rules
+
+When an agent repeats a mistake, the kit steers the fix into something that fails on its own instead of one more sentence in a rules file. The `lessons` skill goes down a fixed order: a test, type, lint rule or hook that goes red; a design where the wrong choice does not exist; deleting the old code the mistake was copied from; and only then a written note. `self-review` asks for evidence a reviewer can check (a screenshot or recording for anything a user sees, before and after numbers for performance), and `safe-change` removes the pattern a change replaces so the next agent does not copy it.
+
 ## Merging a feature into a branch that runs ahead
 
 A feature cut from production has to go into `dev`, which is far ahead and holds other unreleased work. The `git-workflow` skill does it without ever bringing `dev` into the feature branch: it asks your team's way once and remembers it (`mergeFlow` in `.agents/config.json`), measures the conflicts first (`git merge-tree`, nothing changes on disk), resolves them on a branch cut from the target (`integrate/<feature>-into-dev`), resolves what both sides clearly meant itself and asks you only where one side must lose (same behaviour changed twice, deletes, migrations, protected files), then proves it with the build and tests. The `back-merge` hook stops `git merge dev` on a feature branch.
@@ -247,6 +251,8 @@ claude plugin validate . --strict                 # manifest checks
 claude plugin eval . --runs 1 --judge-model sonnet   # behaviour evals (uses model tokens)
 claude --plugin-dir .                             # try it locally
 ```
+
+Agents working on the kit itself start at [AGENTS.md](AGENTS.md): map of the repository, commands, rules for a change, known traps.
 
 Contributions are welcome: new skills and agents, hook checks, adapters for more tools, benchmark results. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [code of conduct](CODE_OF_CONDUCT.md). Security reports: [SECURITY.md](SECURITY.md).
 

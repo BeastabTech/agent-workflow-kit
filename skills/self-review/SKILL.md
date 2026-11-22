@@ -28,11 +28,13 @@ Use `docs/context/SELF_REVIEW.md` if the project has it; otherwise this short li
 - **Shape:** small functions and files, no needless abstraction, no dead code or debug prints.
 - **Docs:** feature file, debugging notes, env example, owner headers.
 
-Fix what you find, then re-run the checks.
+Fix what you find, then re-run the checks. For each real defect you found, ask whether a test, type or lint rule would have caught it, and add that check when it is small (`lessons` skill, section 0).
 
 ## 3. Collect evidence
 
 Run the project's commands (`docs/context/CONVENTIONS.md`). Keep the exact result lines. If a command cannot run, record why.
+
+Give the reviewer something to check instead of something to trust. Match the evidence to the change: test output for logic; a screenshot or short recording for anything a user sees; for a flow with states (checkout, sync, onboarding) the list of states and transitions you exercised; before and after numbers for performance. Run the app for user-facing changes: a passing unit test does not show the screen works.
 
 ## 4. Write the Done report
 

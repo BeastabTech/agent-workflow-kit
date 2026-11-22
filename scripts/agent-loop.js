@@ -13,7 +13,7 @@
  * Verdict is one line: DONE, CONTINUE, or STOP with the reason. STOP when the round limit is reached,
  * or the same failure repeats (stuck) so another try with the same approach will not help. Defaults
  * come from limits.maxLoopRounds (8) and limits.stuckRepeats (2) in .agents/config.json.
- * State: .agents/.loops/<name>.json (gitignored).
+ * State: .agents/.loops/<name>.json (the folder ignores itself; see localDir in lib/config.js).
  */
 const fs = require('fs');
 const path = require('path');

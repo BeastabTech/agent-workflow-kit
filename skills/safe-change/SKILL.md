@@ -24,6 +24,8 @@ Follow every step and report honestly which ones ran.
 
 - Smallest diff that solves the task. No drive-by refactors.
 - Match the surrounding style, comment density and error messages.
+- Remove what your change replaces: the old helper, the workaround it made unnecessary, the flag that is now always on. Left in place, the next agent copies it. If it cannot go yet (other callers), mark it deprecated with a pointer to the new way and note it in the Done report. This is not a licence for drive-by refactors: only what this change makes obsolete.
+- An error or lint message you write says what to do next, not only what is wrong.
 - Never widen what a user can read or write.
 - Side effects fail open (try/catch + log) unless they are the point of the action.
 - New env vars go to `.env.example` with a safe default.

@@ -36,3 +36,6 @@ Dev server: `{{DEV_CMD}}`. Times shown to users use `{{TIMEZONE}}` unless the us
 - Stage explicit paths only. Check `git diff --cached --stat` before committing.
 - Base branch: `{{BASE_BRANCH}}`. Protected branches: {{PROTECTED_BRANCHES}}. Never force-push.
 - Personal preferences (trailers, attribution, reply language) belong in each person's own tool settings.
+
+## Checks before rules
+When the same mistake shows up twice, add a check that fails on it (test, type, lint rule) before adding a line here. Error and lint messages name the fix, not only the fault. Remove the old way when a new one replaces it.
