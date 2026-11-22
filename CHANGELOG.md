@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0
+
+- One command, no clone: `npx github:BeastabTech/agent-workflow-kit#stable init` (also `export-skills`, `remove`, `version`). The repository is now a publishable npm package (`@beastabtech/agent-workflow-kit`, zero dependencies) with a small CLI in `bin/` that routes to the existing scripts.
+- Removal: `remove` undoes `init` and `export-skills`. `init` now writes `.agents/kit-manifest.json`, the files it wrote with a hash of each; `remove` deletes only files that are still exactly what the kit wrote, keeps and lists edited ones (`--force` removes them too), deletes the kit's local state, and takes its lines out of `.gitignore`. It shows the list first and deletes only with `--yes`.
+- Stable channel: a `stable` branch points at the release to use by default (`#stable`, `@stable`); new releases are promoted to it deliberately. See `docs/PUBLISHING.md`.
+
 ## 0.4.1
 
 - Hook state stays out of git everywhere. `.agents/.budget/`, `.gate/`, `.loops/` and `.read/` now carry their own `.gitignore` (`*`), so the plugin no longer leaves an untracked `.agents/.budget/` in repositories where `init` never ran. A folder an older version left behind is repaired on the next write.

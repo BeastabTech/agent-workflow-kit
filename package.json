@@ -1,13 +1,53 @@
 {
-  "name": "agent-workflow-kit",
-  "version": "0.4.1",
-  "private": true,
-  "description": "Development scripts for the kit itself. The kit has no runtime dependencies.",
+  "name": "@beastabtech/agent-workflow-kit",
+  "version": "0.5.0",
+  "description": "A team workflow for coding agents (Claude Code, Codex, Cursor, Gemini CLI, Copilot): short project memory, rules, safe-change and review checklists, plan-first orchestration, safety hooks, and a PR check. Zero dependencies.",
   "license": "MIT",
-  "engines": { "node": ">=18" },
+  "author": "BeastabTech (https://github.com/BeastabTech)",
+  "homepage": "https://github.com/BeastabTech/agent-workflow-kit#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BeastabTech/agent-workflow-kit.git"
+  },
+  "bugs": "https://github.com/BeastabTech/agent-workflow-kit/issues",
+  "keywords": [
+    "ai-agents",
+    "agents-md",
+    "claude-code",
+    "codex",
+    "cursor",
+    "gemini-cli",
+    "workflow",
+    "code-review",
+    "git-hooks",
+    "secret-scan"
+  ],
+  "bin": {
+    "agent-workflow-kit": "bin/agent-workflow-kit.js"
+  },
+  "files": [
+    "bin",
+    "scripts",
+    "skills",
+    "agents",
+    "hooks",
+    "templates",
+    ".claude-plugin",
+    "docs",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "NOTICE",
+    "!docs/benchmarks/*.raw.json"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "node tests/run.js",
     "stats": "node scripts/stats.js"
-  },
-  "repository": "https://github.com/BeastabTech/agent-workflow-kit"
+  }
 }
