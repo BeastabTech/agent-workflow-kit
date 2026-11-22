@@ -17,7 +17,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    uses: BeastabTech/agent-workflow-kit/.github/workflows/pr-check.yml@v0.4.0
+    uses: BeastabTech/agent-workflow-kit/.github/workflows/pr-check.yml@v0.4.1
     with:
       model: <your model id>
       security: true
@@ -25,12 +25,12 @@ jobs:
       api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
 
-Then add the key under Settings, Secrets and variables, Actions in your repository (or your organisation). Pin `@v0.4.0` to the release tag you want or, stricter, a full commit sha.
+Then add the key under Settings, Secrets and variables, Actions in your repository (or your organisation). Pin `@v0.4.1` to the release tag you want or, stricter, a full commit sha.
 
 Only the secret scan, no model and no key:
 
 ```yaml
-    uses: BeastabTech/agent-workflow-kit/.github/workflows/pr-check.yml@v0.4.0
+    uses: BeastabTech/agent-workflow-kit/.github/workflows/pr-check.yml@v0.4.1
     with:
       review: false
 ```

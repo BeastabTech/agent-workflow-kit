@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.1
+
+- Hook state stays out of git everywhere. `.agents/.budget/`, `.gate/`, `.loops/` and `.read/` now carry their own `.gitignore` (`*`), so the plugin no longer leaves an untracked `.agents/.budget/` in repositories where `init` never ran. A folder an older version left behind is repaired on the next write.
+- `init` checks `.gitignore`: the report lists lines for things that exist and git does not ignore (env files, `node_modules/`, build and cache folders) under `gitignoreSuggest`, adds the ones the owner accepts (`"gitignore": [...]` in the answers), always ignores `.claude/settings.local.json`, and names env files that are already committed (`trackedEnvFiles`).
+- Setup asks less up front. The `init` skill asks seven essentials and leaves the rest (`owners`, `protectedFiles`, `workMode`, `commitPolicy`, `timezone`, git hooks, optional files) for the moment a task first needs them. Unanswered settings are listed under `"unset"` in `.agents/config.json` and named in the session-start note.
+- `init` takes the base branch from git when the answers do not name one, and protects it.
+- Merging a feature into a branch that runs ahead (release to `dev`, `staging`). The `git-workflow` skill now has the flow: ask the team's way once and remember it in `mergeFlow`, measure conflicts first with `git merge-tree`, resolve on a branch cut from the target, a table of what the agent resolves itself and what it asks, proof steps, then deliver. New `back-merge` check: merging, pulling or rebasing a `mergeFlow.noBackMerge` branch into a feature branch asks (denied in `strict`).
+
 ## 0.4.0
 
 - PR check: a reusable workflow (`.github/workflows/pr-check.yml`) any repository can call for a secret scan and a short AI review of each pull request, with its own model and API key (`anthropic`, or any OpenAI-compatible API). Switches: `review`, `security`, `secret-scan`, `fail-on`. Two comment levels, each with the failure case and the fix; repeats are not posted twice; no findings posts nothing. The pull request's code is never checked out, the model gets no tools, and fork PRs get no key. See `docs/PR_CHECK.md`.
