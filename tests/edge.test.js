@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
 const { execFileSync, spawnSync } = require('child_process');
-const { FAKE, tmpRepo, runHook, decision } = require('./helpers');
+const { ROOT, FAKE, tmpRepo, runHook, decision } = require('./helpers');
 const { init } = require('../scripts/init-project');
 const { exportSkills, DESTS } = require('../scripts/export-skills');
 
@@ -179,4 +179,130 @@ test('message log: post prints a confirmation, not a second copy of the header',
   assert.match(posted, /^posted: \S+ · from a · to b · note\n$/);
   const tail = run(['tail', '-n', '1']);
   assert.equal(tail.match(/^### /gm).length, 1);
+});
+
+const { suggestIgnores } = require('../scripts/init-project');
+const { spawnSync: sp } = require('child_process');
+const dirty = (dir) => sp('git', ['status', '--short', '--untracked-files=all'], { cwd: dir, encoding: 'utf8' }).stdout;
+
+test('hook state never shows in git status, also in a repo init never touched', () => {
+  const { dir } = tmpRepo(); // no .agents/config.json, no kit lines in .gitignore
+  runHook('pre-agent', { session_id: 's', cwd: dir, tool_input: { prompt: 'p', description: 'd', subagent_type: 'reviewer' } });
+  assert.ok(fs.existsSync(path.join(dir, '.agents', '.budget', 's.json')));
+  assert.equal(fs.readFileSync(path.join(dir, '.agents', '.budget', '.gitignore'), 'utf8'), '*\n');
+  assert.equal(dirty(dir), '');
+  // a folder an older version left without the ignore file is repaired on the next write
+  fs.unlinkSync(path.join(dir, '.agents', '.budget', '.gitignore'));
+  assert.match(dirty(dir), /\.agents\/\.budget/);
+  runHook('subagent-stop', { session_id: 's', cwd: dir, agent_type: 'reviewer' });
+  assert.equal(dirty(dir), '');
+});
+
+test('loop state ignores itself too', () => {
+  const { dir } = tmpRepo();
+  sp('node', [path.join(ROOT, 'scripts', 'agent-loop.js'), 'start', '--name', 'fix', '--goal', 'green tests'], { cwd: dir, encoding: 'utf8' });
+  assert.ok(fs.existsSync(path.join(dir, '.agents', '.loops', 'fix.json')));
+  assert.equal(dirty(dir), '');
+});
+
+test('init: suggests .gitignore lines for what exists, adds the ones the owner accepted, flags committed env files', () => {
+  const { dir, git } = tmpRepo();
+  fs.mkdirSync(path.join(dir, 'node_modules'));
+  fs.writeFileSync(path.join(dir, 'node_modules', 'x.js'), '');
+  fs.writeFileSync(path.join(dir, '.env'), 'A=1\n');
+  fs.mkdirSync(path.join(dir, 'build'));
+  fs.writeFileSync(path.join(dir, 'build', 'tool.js'), '');
+  fs.writeFileSync(path.join(dir, '.env.staging'), 'B=2\n');
+  git('add', '-f', 'build/tool.js', '.env.staging');
+  git('commit', '-q', '-m', 'chore: add files');
+  const s = suggestIgnores(dir);
+  assert.deepEqual(s.missing, ['.env', '.env.*', '!.env.example', 'node_modules/']); // build/ is committed on purpose: left alone
+  assert.deepEqual(s.tracked, ['.env.staging']);
+
+  const dry = init({ target: dir, tools: 'claude', 'dry-run': true });
+  assert.deepEqual(dry.gitignoreSuggest, s.missing);
+  assert.deepEqual(dry.trackedEnvFiles, ['.env.staging']);
+  assert.equal(fs.existsSync(path.join(dir, '.gitignore')), false); // a dry run writes nothing
+
+  const answers = path.join(dir, 'a.json');
+  fs.writeFileSync(answers, JSON.stringify({ gitignore: ['.env', '.env.*', '!.env.example', 'node_modules/'] }));
+  const r = init({ target: dir, answers, tools: 'claude' });
+  const ignore = fs.readFileSync(path.join(dir, '.gitignore'), 'utf8');
+  for (const line of ['.env', 'node_modules/', '.agents/.budget/', '.claude/settings.local.json']) assert.ok(ignore.split('\n').includes(line), line);
+  assert.deepEqual(r.gitignoreSuggest, []);
+  assert.doesNotMatch(dirty(dir), /node_modules|\.env$|a\.json.*\.env/m);
+  assert.deepEqual(suggestIgnores(fs.mkdtempSync(path.join(require('os').tmpdir(), 'awk-nogit-'))), { missing: [], tracked: [] });
+});
+
+test('init: settings not answered are listed as unset, the base branch comes from git, session-start names what is open', () => {
+  const { dir } = tmpRepo(); // branch "feature"
+  const answers = path.join(dir, 'a.json');
+  fs.writeFileSync(answers, JSON.stringify({ timezone: 'Asia/Kolkata', workMode: 'shared' }));
+  const r = init({ target: dir, answers, tools: 'claude' });
+  const cfg = JSON.parse(fs.readFileSync(path.join(dir, '.agents', 'config.json'), 'utf8'));
+  assert.deepEqual(cfg.unset, ['owners', 'protectedFiles', 'commitPolicy', 'mergeFlow']);
+  assert.deepEqual(r.unset, cfg.unset);
+  assert.equal(cfg.baseBranch, 'feature');
+  assert.ok(cfg.protectedBranches.includes('feature'));
+  const note = runHook('session-start', { cwd: dir, source: 'startup' }).json.hookSpecificOutput.additionalContext;
+  assert.match(note, /Setup questions not asked yet: owners, protectedFiles, commitPolicy, mergeFlow/);
+  cfg.unset = [];
+  fs.writeFileSync(path.join(dir, '.agents', 'config.json'), JSON.stringify(cfg));
+  assert.doesNotMatch(runHook('session-start', { cwd: dir, source: 'startup' }).json.hookSpecificOutput.additionalContext, /Setup questions/);
+});
+
+test('back-merge: a branch that runs ahead may not come into a feature branch; integration and long-lived branches may take it', () => {
+  const { dir, git } = tmpRepo({ protectedBranches: ['main'], mergeFlow: { noBackMerge: ['dev'] } }); // on branch "feature"
+  const bash = (command, env) => runHook('pre-bash', { cwd: dir, tool_input: { command } }, env);
+  for (const cmd of ['git merge dev', 'git merge --no-ff origin/dev', 'git pull origin dev', 'git rebase dev', 'git fetch && git merge refs/remotes/origin/dev']) {
+    const r = bash(cmd);
+    assert.equal(decision(r), 'ask', cmd);
+    assert.match(r.json.hookSpecificOutput.permissionDecisionReason, /back-merge.*git switch -c integrate\/feature-into-dev origin\/dev/);
+  }
+  assert.equal(decision(bash('git merge dev', { AWK_PROFILE: 'strict' })), 'deny');
+  assert.equal(decision(bash('git merge dev', { AWK_DISABLE: 'back-merge' })), 'allow');
+  for (const cmd of ['git merge main', 'git pull', 'git merge --abort', 'git merge feat/dev-tools', 'git log dev', 'git push origin feature', 'git diff dev...HEAD']) assert.equal(decision(bash(cmd)), 'allow', cmd);
+  git('switch', '-q', '-c', 'integrate/feature-into-dev');
+  assert.equal(decision(bash('git merge dev')), 'allow'); // cut from dev to resolve conflicts there
+  assert.equal(decision(bash('git merge --no-ff origin/feature')), 'allow');
+  git('switch', '-q', '-c', 'dev');
+  assert.equal(decision(bash('git pull origin dev')), 'allow');
+  git('switch', '-q', '-c', 'main');
+  assert.equal(decision(bash('git merge dev')), 'allow'); // long-lived branches follow the release flow, not this rule
+  const plain = tmpRepo({});
+  assert.equal(decision(runHook('pre-bash', { cwd: plain.dir, tool_input: { command: 'git merge dev' } })), 'allow'); // nothing configured: no rule
+});
+
+test('merge flow: init stores it, session-start states the rule, a feature branch keeps no trace of the target after an integration merge', () => {
+  const { dir } = tmpRepo();
+  const answers = path.join(dir, 'a.json');
+  fs.writeFileSync(answers, JSON.stringify({ mergeFlow: { noBackMerge: ['dev'], notes: ['PR into dev, owner approves'] } }));
+  init({ target: dir, answers, tools: 'claude' });
+  const cfg = JSON.parse(fs.readFileSync(path.join(dir, '.agents', 'config.json'), 'utf8'));
+  assert.deepEqual(cfg.mergeFlow, { noBackMerge: ['dev'], integrationPrefix: 'integrate/', notes: ['PR into dev, owner approves'] });
+  assert.ok(!cfg.unset.includes('mergeFlow'));
+  assert.match(runHook('session-start', { cwd: dir, source: 'startup' }).json.hookSpecificOutput.additionalContext, /Merge rule: never merge, pull or rebase dev into a feature branch/);
+
+  // The flow the skill describes, on a real conflict: dev and the feature both change the same line.
+  const w = tmpRepo();
+  const write = (text) => fs.writeFileSync(path.join(w.dir, 'app.txt'), text);
+  write('one\n');
+  w.git('add', 'app.txt');
+  w.git('commit', '-q', '-m', 'feat: base');
+  w.git('switch', '-q', '-c', 'dev');
+  write('one from dev\n');
+  w.git('commit', '-q', '-am', 'feat: dev change');
+  w.git('switch', '-q', 'feature');
+  write('one from feature\n');
+  w.git('commit', '-q', '-am', 'feat: feature change');
+  const tree = sp('git', ['merge-tree', '--write-tree', '--name-only', 'dev', 'feature'], { cwd: w.dir, encoding: 'utf8' });
+  if (tree.status === 1) assert.match(tree.stdout, /app\.txt/); // measured without touching the checkout (git 2.38+)
+  w.git('switch', '-q', '-c', 'integrate/feature-into-dev', 'dev');
+  assert.notEqual(sp('git', ['merge', '--no-ff', 'feature'], { cwd: w.dir }).status, 0);
+  write('one from dev and feature\n');
+  w.git('commit', '-q', '-am', 'merge: feature into dev');
+  const log = (ref) => sp('git', ['log', '--format=%s', ref], { cwd: w.dir, encoding: 'utf8' }).stdout;
+  assert.match(log('integrate/feature-into-dev'), /feature change/);
+  assert.match(log('integrate/feature-into-dev'), /dev change/);
+  assert.doesNotMatch(log('feature'), /dev change/); // the feature branch never received dev
 });

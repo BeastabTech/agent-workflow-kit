@@ -46,7 +46,7 @@ Results were within noise of using no kit. (The small-module figures for `auto`,
 /plugin install agent-workflow-kit@agent-workflow-kit
 ```
 
-Then, in your repo, say **"set up the agent workflow here"**. That's it. Skills are namespaced, for example `/agent-workflow-kit:bug-intake`.
+Then, in your repo, say **"set up the agent workflow here"**. It reads the repo, asks seven short questions it cannot guess (edition, commands, branches, tools, state sync, `.gitignore`), and asks the rest only when a task first needs it. That's it. Skills are namespaced, for example `/agent-workflow-kit:bug-intake`.
 
 **Codex, Cursor, Gemini CLI, Copilot or anything else.** Run these from your repo's root folder:
 
@@ -116,8 +116,9 @@ More: [docs/FLOW.md](docs/FLOW.md).
 | `.claude/rules/*.md` | Team rules: never-break, working agreement, git and approvals, code comments. Plain Markdown, for every tool |
 | `.claude/settings.json` | Earlier auto-compact (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=75`) |
 | `docs/context/*` | Architecture, module map with owners, conventions, testing, self-review, Definition of Done, agent communication, debugging, feature docs |
-| `.agents/config.json` | Team settings the hooks read: work mode, protected branches and files, state sync |
-| `.agents/STATE.md`, `HANDOFF.md`, `BUGS.md` | Shared state (one owner), hand-off note, bug list |
+| `.agents/config.json` | Team settings the hooks read: work mode, protected branches and files, state sync, merge flow, and `unset` (setup questions not asked yet) |
+| `.gitignore` | Adds the kit's local state, `.claude/settings.local.json`, and the lines you accepted from its check (env files, dependency and build folders that exist and are not ignored) |
+| `.agents/STATE.md`, `HANDOFF.md`, `BUGS.md`, `PLAN.md` | Shared state (one owner), hand-off note, bug list, the plan the user approved |
 | `.agents/tools/msg.js` | Message log CLI for agent-to-agent messages and file claims (any tool can run it) |
 | `.githooks/*`, `.agents/tools/git-guard.js` | Optional tool-neutral pre-commit and commit-msg checks |
 | `.agents/skills/*` | Optional: the skills exported for non-Claude agents |
@@ -161,13 +162,22 @@ More: [docs/FLOW.md](docs/FLOW.md).
 | `force-push` | force push or `+ref` push | block (with lease: ask) |
 | `protected-branch` | push to or commit on a protected branch | ask |
 | `destructive-db` | `migrate reset`, `db push`, `DROP`, `TRUNCATE`, `DELETE` without `WHERE`, `FLUSHALL`, `terraform destroy`, and similar | block (configurable to ask) |
+| `back-merge` | `git merge` / `pull` / `rebase` of a branch that runs ahead (`mergeFlow.noBackMerge`, for example `dev`) into a feature branch | ask (block in `strict`) |
 | `protected-files`, `env-files` | edit of a protected glob or an env file | ask |
+| `plan-gate` | Starting a worker sub-agent before `.agents/PLAN.md` says `Status: approved` | ask |
+| `machine-check` | Starting a sub-agent when free memory or CPU cannot take one more | ask (warn for the first agent under high pressure) |
 | `agent-budget` | Starting a sub-agent (`Agent` tool) | warn near a limit, ask when it would be crossed (parallel, per session, estimated tokens, huge or repeated briefs) |
-| Session start | `.agents/` exists, or right after compaction | short note: work mode, hand-off, unread messages |
+| Session start | `.agents/` exists, or right after compaction | short note: work mode, limits, machine reading, merge rule, setup questions still open, hand-off, unread messages |
+
+The hooks keep small per-session state in `.agents/.budget/`, `.gate/`, `.loops/` and `.read/`. Each folder ignores itself, so nothing shows in `git status`, also in a repository where `init` never ran.
 
 Off switches: `AWK_HOOKS=off`, `AWK_DISABLE=<check>,<check>`, plugin options, or `.agents/config.json`. Details: [docs/HOOKS.md](docs/HOOKS.md).
 
 ---
+
+## Merging a feature into a branch that runs ahead
+
+A feature cut from production has to go into `dev`, which is far ahead and holds other unreleased work. The `git-workflow` skill does it without ever bringing `dev` into the feature branch: it asks your team's way once and remembers it (`mergeFlow` in `.agents/config.json`), measures the conflicts first (`git merge-tree`, nothing changes on disk), resolves them on a branch cut from the target (`integrate/<feature>-into-dev`), resolves what both sides clearly meant itself and asks you only where one side must lose (same behaviour changed twice, deletes, migrations, protected files), then proves it with the build and tests. The `back-merge` hook stops `git merge dev` on a feature branch.
 
 ## PR check for any repository
 
@@ -177,7 +187,7 @@ A reusable GitHub Actions workflow: a secret scan plus a short AI review on ever
 jobs:
   check:
     permissions: { contents: read, pull-requests: write }
-    uses: BeastabTech/agent-workflow-kit/.github/workflows/pr-check.yml@v0.4.0
+    uses: BeastabTech/agent-workflow-kit/.github/workflows/pr-check.yml@v0.4.1
     with: { model: <your model id>, security: true }
     secrets: { api-key: "${{ secrets.ANTHROPIC_API_KEY }}" }
 ```

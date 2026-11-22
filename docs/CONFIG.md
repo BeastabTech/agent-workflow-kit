@@ -29,10 +29,14 @@
 | `limits.agentMemMB` | `600` | Memory one running agent or session needs, its tools and test runs included |
 | `limits.memReserveMB` | `2048` | Memory always left for the OS and your apps (at least 15% of RAM is kept either way) |
 | `limits.cpuPerAgent` | `1` | Idle CPU cores one running agent needs |
+| `mergeFlow.noBackMerge` | `[]` | Branches that run ahead (`dev`, `staging`). Merging, pulling or rebasing one into a feature branch asks (denied in `strict`) |
+| `mergeFlow.integrationPrefix` | `integrate/` | Prefix of the branch cut from the target to resolve conflicts on; exempt from the rule above |
+| `mergeFlow.notes` | `[]` | The team's other merge decisions in the user's words; agents follow them |
 | `planGate` | `true` | Worker agents ask you until `.agents/PLAN.md` says `Status: approved`; `false` turns it off |
 | `limits.maxFixRounds` | `2` | Fix rounds for the closer and reviewers (rule text only) |
 | `profile` | `standard` | `minimal`, `standard` or `strict` (see below) |
 | `tools` | all | Which agent adapters `init` wrote |
+| `unset` | `[]` | Settings `init` left at their default because nobody was asked yet (`owners`, `protectedFiles`, `workMode`, `commitPolicy`, `timezone`, `mergeFlow`). The agent asks each one when a task first needs it and removes it from this list |
 
 Without `.agents/config.json`, only the personal checks run (trailers, secrets, force push, destructive DB). Staging and protected-branch checks need the team file.
 
@@ -54,7 +58,7 @@ Set when enabling the plugin (stored in your own Claude Code settings, not the r
 | Variable | Effect |
 |---|---|
 | `AWK_HOOKS=off` | Turn every kit hook and the git guard off for this shell |
-| `AWK_DISABLE=a,b` | Turn off named checks: `ai-trailers`, `secret-scan`, `explicit-staging`, `force-push`, `protected-branch`, `destructive-db`, `protected-files`, `env-files`, `agent-budget`, `plan-gate`, `machine-check`, `done-gate` |
+| `AWK_DISABLE=a,b` | Turn off named checks: `ai-trailers`, `secret-scan`, `explicit-staging`, `force-push`, `protected-branch`, `destructive-db`, `protected-files`, `env-files`, `agent-budget`, `plan-gate`, `machine-check`, `done-gate`, `back-merge` |
 | `AWK_PROFILE=minimal\|standard\|strict` | Hook profile for this shell. Order: this variable, the plugin option, `profile` in `.agents/config.json`, then `standard` |
 | `AWK_SHARED_DIR=/path` | Message log and state folder override |
 

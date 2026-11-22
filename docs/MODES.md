@@ -12,6 +12,8 @@ Set in `.agents/config.json` (written by `init`). Change them any time; the hook
 | Merging | Not needed | Each branch is reviewed and merged by a human or the manager |
 | Best for | One writer plus read-only helpers; small repos | Two or more agents writing code at the same time |
 
+Merging a feature into a branch that runs ahead (`dev`, `staging`) works the same in both modes: conflicts are resolved on a branch cut from the target, never by bringing the target into the feature. See the `git-workflow` skill and `mergeFlow` in [CONFIG.md](CONFIG.md).
+
 The message log and state always resolve to the **main checkout's** `.agents/` folder (via `git rev-parse --git-common-dir`), so every worktree reads and writes the same log.
 
 Create a worktree for a worker:

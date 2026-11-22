@@ -28,6 +28,7 @@ All hooks are plain Node.js with no dependencies. They **fail open**: broken inp
 | `force-push` | `git push` with a force flag or a `+refspec` | deny; with lease: ask | no |
 | `protected-branch` | push to, or commit on, a branch in `protectedBranches` | ask | yes |
 | `destructive-db` | `prisma migrate reset`, `prisma db push`, `db:reset/push/drop` scripts, `DROP TABLE/DATABASE/SCHEMA`, `TRUNCATE`, `DELETE FROM x` without `WHERE`, `rails db:drop`, django `flush`, `dropDatabase()`, `FLUSHALL`, `dropdb`, ORM schema drop, `knex migrate:rollback --all`, `terraform destroy` | deny (or ask with `"destructiveDb": "ask"`) | no |
+| `back-merge` | `git merge`, `git pull` or `git rebase` of a branch in `mergeFlow.noBackMerge` while on a feature branch | ask (deny in `strict`); allowed on the branch itself, long-lived branches and `integrate/...` branches | yes |
 | `protected-files` | edit of a path matching `protectedFiles` | ask | yes |
 | `env-files` | edit of `.env`, `.env.local` and similar (not `.env.example`) | ask | no |
 | `plan-gate` | starting a worker sub-agent (not explorer, planner or reviewer) in a project with `.agents/config.json` | ask until `.agents/PLAN.md` says `Status: approved`; off in `minimal` and with `planGate: false` | yes |
@@ -51,6 +52,10 @@ Commands that only read (`grep`, `rg`, `git log`, `git show`, `git diff`, `man`)
 AWS access key ids, private key blocks, GitHub tokens, Slack tokens, Google API keys, Stripe live keys, Anthropic and OpenAI API keys, GCP service-account key JSON, npm tokens. Values with words like `example`, `placeholder`, `changeme`, `<...>` or `${...}` are not flagged by the generic rule.
 
 False positive? Add `awk-allow-secret` in a comment on that line, or add the path to `secretScan.allowPaths`.
+
+## Local state and git
+
+The hooks keep small per-session files in `.agents/.budget/`, `.agents/.gate/`, `.agents/.loops/` and `.agents/.read/`. Each of these folders holds a `.gitignore` containing `*`, written when the folder is created, so the state never shows in `git status` and cannot be committed. This holds in every repository the plugin runs in, also one where `init` never ran. `init` adds the same paths, and `.claude/settings.local.json`, to the project's `.gitignore`.
 
 ## Turning things off
 

@@ -2,7 +2,7 @@
 'use strict';
 /**
  * PreToolUse guard for Bash.
- * Checks: ai-trailers, secret-scan, explicit-staging, force-push, protected-branch, destructive-db.
+ * Checks: ai-trailers, secret-scan, explicit-staging, force-push, protected-branch, back-merge, destructive-db.
  * Blocks only clear cases; asks or warns when unsure. Any internal error lets the command through.
  */
 const fs = require('fs');
@@ -15,6 +15,7 @@ const { readInput, respondPreToolUse } = require('../lib/hook-io');
 const GIT = String.raw`\bgit(?:\s+(?:-C|-c)\s+\S+)*\s+`;
 const RE_COMMIT = new RegExp(GIT + String.raw`commit\b`);
 const RE_PUSH = new RegExp(GIT + String.raw`push\b([^\n;&|]*)`);
+const RE_BRING_IN = new RegExp(GIT + String.raw`(merge|pull|rebase)\b([^\n;&|]*)`);
 
 const TRAILERS = [
   [/(?:^|[\s"'])co-authored-by\s*:/im, 'Co-Authored-By trailer'],
@@ -181,6 +182,38 @@ function checkCommitBranch(cmd, cwd, cfg) {
   return [{ level: 'ask', check: 'protected-branch', reason: `Commit directly on protected branch "${b}". Confirm this is intended.` }];
 }
 
+/**
+ * back-merge: a branch that runs ahead (mergeFlow.noBackMerge, for example dev) is about to be merged,
+ * pulled or rebased into a feature branch. That drags every unreleased feature on it into the feature
+ * branch, which then can never go to production alone. Allowed on the branch itself, on other
+ * long-lived branches, and on an integration branch (cut from the target to resolve conflicts there).
+ */
+function checkBackMerge(cmd, cwd, cfg) {
+  const ahead = cfg.mergeFlow.noBackMerge;
+  if (!cfg.hasTeamConfig || !ahead.length) return [];
+  for (const seg of segments(cmd)) {
+    const m = RE_BRING_IN.exec(seg);
+    if (!m) continue;
+    const args = tokens(m[2]);
+    if (args.some((a) => /^--(abort|continue|skip|quit)$/.test(a))) continue;
+    // `origin/dev`, `refs/heads/dev` and a `pull origin dev` argument all name dev.
+    const named = args.filter((a) => !a.startsWith('-')).map((a) => a.replace(/^refs\/(heads|remotes\/[^/]+)\//, '').replace(/^(origin|upstream)\//, ''));
+    const hit = named.find((a) => ahead.includes(a));
+    if (!hit) continue;
+    const here = currentBranch(gitCwd(seg, cwd));
+    const prefix = String(cfg.mergeFlow.integrationPrefix || 'integrate/');
+    if (!here || here === hit || here.startsWith(prefix) || ahead.includes(here) || cfg.protectedBranches.includes(here)) continue;
+    return [
+      {
+        level: cfg.profile === 'strict' ? 'deny' : 'ask',
+        check: 'back-merge',
+        reason: `"${hit}" runs ahead and must not come into "${here}" (mergeFlow.noBackMerge): it would carry every unreleased change on ${hit} into this branch. To release ${here} into ${hit}, resolve the conflicts on ${hit}'s side: git switch -c ${prefix}${here.replace(/\//g, '-')}-into-${hit} origin/${hit}, then git merge --no-ff ${here} there (git-workflow skill, "Merge a feature into another branch").`,
+      },
+    ];
+  }
+  return [];
+}
+
 function checkDestructiveDb(cmd, cfg) {
   if (!cfg.personal.destructiveDbGuard || cfg.destructiveDb === 'off') return [];
   const out = [];
@@ -220,9 +253,10 @@ function main() {
   run('explicit-staging', () => checkStaging(cmd, cfg));
   run('force-push', () => checkPush(cmd, cwd, { ...cfg, hasTeamConfig: false }));
   run('protected-branch', () => [...checkPush(cmd, cwd, cfg).filter((f) => f.check === 'protected-branch'), ...checkCommitBranch(cmd, cwd, cfg)]);
+  run('back-merge', () => checkBackMerge(cmd, cwd, cfg));
   run('destructive-db', () => checkDestructiveDb(cmd, cfg));
   respondPreToolUse(findings);
 }
 
 if (require.main === module) main();
-module.exports = { checkTrailers, checkStaging, checkPush, checkDestructiveDb, segments, tokens };
+module.exports = { checkTrailers, checkStaging, checkPush, checkBackMerge, checkDestructiveDb, segments, tokens };

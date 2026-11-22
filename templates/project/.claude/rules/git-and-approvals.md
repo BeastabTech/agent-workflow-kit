@@ -6,6 +6,7 @@
 - Stage explicit paths only (`git add <file>`), never `git add -A` / `git add .` / `git commit -a`. Check `git diff --cached --stat` first.
 - Never force-push. Never rewrite pushed history. If a push is rejected, stop and report.
 - Protected branches: {{PROTECTED_BRANCHES}}. Pushing to them may deploy: needs a human's yes in this session.
+- Never merge, pull or rebase a branch that runs ahead (`mergeFlow.noBackMerge` in `.agents/config.json`) into a feature branch. To release a feature into it, resolve conflicts on a branch cut from the target (`git-workflow` skill).
 - Never revert another agent's or human's changes without being asked.
 
 ## Approvals
