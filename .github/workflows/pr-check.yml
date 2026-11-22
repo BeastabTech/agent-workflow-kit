@@ -1,0 +1,104 @@
+# Reusable PR check: secret scan plus a short AI review with the caller's own model and key.
+# Call it from any repository; see docs/PR_CHECK.md for the full caller example.
+#
+#   jobs:
+#     check:
+#       permissions: { contents: read, pull-requests: write }
+#       uses: BeastabTech/agent-workflow-kit/.github/workflows/pr-check.yml@<tag or commit sha>
+#       with: { model: <your model id>, security: true }
+#       secrets: { api-key: "${{ secrets.YOUR_KEY }}" }
+#
+# Security notes for whoever edits this file:
+# - Inputs reach the script only as environment variables. Never write ${{ inputs.* }} or
+#   ${{ github.event.* }} inside a `run:` line: that pastes caller text into a shell command.
+# - Only the kit's own scripts are checked out and run. The pull request's code is read as a diff
+#   through the API and is never checked out or executed.
+# - The key is given to one step only. Use this with `on: pull_request`, never `pull_request_target`:
+#   fork PRs then get no key, and the review is skipped for them by design.
+name: pr-check
+on:
+  workflow_call:
+    inputs:
+      review:
+        description: Review the diff for correctness bugs.
+        type: boolean
+        default: true
+      security:
+        description: Also review the diff for security flaws.
+        type: boolean
+        default: false
+      secret-scan:
+        description: Scan added lines for committed credentials (no model needed).
+        type: boolean
+        default: true
+      provider:
+        description: '"anthropic" or "openai" (any OpenAI-compatible chat completions API: OpenAI, OpenRouter, Azure, a local model).'
+        type: string
+        default: anthropic
+      model:
+        description: Model id to review with. Required for review or security.
+        type: string
+        default: ''
+      base-url:
+        description: API base URL. Empty uses the provider's default. Must be https (http only for localhost).
+        type: string
+        default: ''
+      max-comments:
+        description: Most comments one run may post.
+        type: number
+        default: 8
+      max-diff-chars:
+        description: Largest diff sent to the model; files that do not fit are listed as not reviewed.
+        type: number
+        default: 200000
+      fail-on:
+        description: 'When the job fails: "never", "secrets" (a clear credential was added) or "blocking" (any blocking finding).'
+        type: string
+        default: secrets
+      rules:
+        description: Extra review rules for your project, in plain text.
+        type: string
+        default: ''
+      kit-ref:
+        description: Kit version to run. Empty runs the same commit as this workflow file.
+        type: string
+        default: ''
+    secrets:
+      api-key:
+        description: Key for your model provider. Not needed when only secret-scan is on.
+        required: false
+
+permissions: {}
+
+jobs:
+  pr-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Get the kit's scripts (not the pull request's code)
+        uses: actions/checkout@v7
+        with:
+          # job.workflow_* point at this reusable workflow, not at the caller. If a runner does not
+          # provide them the values are empty and the kit's default branch is used.
+          repository: ${{ job.workflow_repository || 'BeastabTech/agent-workflow-kit' }}
+          ref: ${{ inputs.kit-ref || job.workflow_sha }}
+          persist-credentials: false
+          sparse-checkout: scripts
+      - name: Check the pull request
+        run: node scripts/pr-check.js
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AWK_API_KEY: ${{ secrets.api-key }}
+          AWK_REVIEW: ${{ inputs.review }}
+          AWK_SECURITY: ${{ inputs.security }}
+          AWK_SECRET_SCAN: ${{ inputs.secret-scan }}
+          AWK_PROVIDER: ${{ inputs.provider }}
+          AWK_MODEL: ${{ inputs.model }}
+          AWK_BASE_URL: ${{ inputs.base-url }}
+          AWK_MAX_COMMENTS: ${{ inputs.max-comments }}
+          AWK_MAX_DIFF_CHARS: ${{ inputs.max-diff-chars }}
+          AWK_FAIL_ON: ${{ inputs.fail-on }}
+          AWK_RULES: ${{ inputs.rules }}

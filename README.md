@@ -169,6 +169,21 @@ Off switches: `AWK_HOOKS=off`, `AWK_DISABLE=<check>,<check>`, plugin options, or
 
 ---
 
+## PR check for any repository
+
+A reusable GitHub Actions workflow: a secret scan plus a short AI review on every pull request, with your own model and API key. Turn `review`, `security` and `secret-scan` on or off. Comments are two levels only (blocking, should fix), each with the failure case and the fix; no findings posts nothing.
+
+```yaml
+jobs:
+  check:
+    permissions: { contents: read, pull-requests: write }
+    uses: BeastabTech/agent-workflow-kit/.github/workflows/pr-check.yml@v0.4.0
+    with: { model: <your model id>, security: true }
+    secrets: { api-key: "${{ secrets.ANTHROPIC_API_KEY }}" }
+```
+
+Setup, other providers and how the key is kept safe: [docs/PR_CHECK.md](docs/PR_CHECK.md).
+
 ## Modes
 
 - **Work mode.** `shared`: one checkout; claim files first and stage explicit paths. `worktree`: each writing agent gets its own git worktree and branch. The message log always lives in the main checkout, so every worktree sees the same messages.
