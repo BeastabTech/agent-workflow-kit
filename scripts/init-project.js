@@ -378,6 +378,8 @@ function init(opts) {
   ignore.push(...list(raw.gitignore, [])); // lines the owner said yes to (see suggestIgnores)
   if (n.stateSync !== 'git') ignore.push('.agents/STATE.md', '.agents/HANDOFF.md', '.agents/BUGS.md', '.agents/PLAN.md');
   report.gitignore = ensureGitignore(target, ignore, dry);
+  // Remember what was written, with hashes, so `remove` can take out exactly this and spare edited files.
+  if (!dry) require('./lib/manifest').record(target, report.written, report.gitignore);
   const sug = suggestIgnores(target);
   report.gitignoreSuggest = sug.missing.filter((l) => !ignore.includes(l));
   report.trackedEnvFiles = sug.tracked;

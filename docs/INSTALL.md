@@ -22,6 +22,17 @@ Then open your repo in Claude Code and say **"set up the agent workflow here"**.
 
 Check it worked: type `/agent-workflow-kit:` and the skill list appears.
 
+## Any agent, one command (no clone)
+
+From your repo's root folder:
+
+```bash
+npx github:BeastabTech/agent-workflow-kit#stable init --tools claude,codex,cursor,gemini,copilot --with-git-hooks
+npx github:BeastabTech/agent-workflow-kit#stable export-skills --to agents
+```
+
+`#stable` is the release the maintainers marked stable; use a tag such as `#v0.5.0` to pin one version. `init` writes the files every agent tool reads (`AGENTS.md` and the per-tool pointers), so whichever agent works in the repo afterwards follows the same rules. Commit what it wrote. Add `--dry-run` to preview, `--preset lite|low-tokens|auto|normal|best` to pick the edition.
+
 ## Codex, Cursor, Gemini CLI, Copilot or any other agent
 
 Run these from your repo's root folder:
@@ -59,9 +70,15 @@ Without the plugin, run `git -C ../agent-workflow-kit pull`, then the two `node`
 
 ## Remove
 
+From the project (shows the list first, deletes only with `--yes`):
+
 ```bash
-claude plugin uninstall agent-workflow-kit@agent-workflow-kit
-git config --unset core.hooksPath
+npx github:BeastabTech/agent-workflow-kit#stable remove
+npx github:BeastabTech/agent-workflow-kit#stable remove --yes
+git config --unset core.hooksPath          # only if you turned the git hooks on
+claude plugin uninstall agent-workflow-kit@agent-workflow-kit   # only if you installed the plugin
 ```
 
-The files `init` wrote are ordinary files in your repo. Delete the ones you do not want.
+`remove` reads `.agents/kit-manifest.json`, the list of files `init` and `export-skills` wrote with a hash of each. It deletes a file only when it is still exactly what the kit wrote, so an `AGENTS.md` you edited or a filled-in `STATE.md` stays and is listed; `--force` removes those too. It also deletes the kit's local state folders and takes the kit's lines out of `.gitignore`. It never touches a file the kit did not write, and it leaves `.agents/LOG.md` (your message log). A project set up before version 0.5.0 has no manifest: the command lists the kit's paths and removes nothing.
+
+Without npx, from a clone of the kit: `node ../agent-workflow-kit/scripts/remove-project.js --target . --yes`.

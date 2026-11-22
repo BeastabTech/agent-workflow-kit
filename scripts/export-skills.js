@@ -71,6 +71,7 @@ function exportSkills(opts) {
       report.written.push(rel);
     }
   }
+  if (!opts['dry-run'] && report.written.length) require('./lib/manifest').record(target, report.written, []); // so `remove` can undo the export
   return report;
 }
 

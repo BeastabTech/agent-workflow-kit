@@ -1,6 +1,24 @@
 # Publishing
 
-The kit ships as a Claude Code plugin from this GitHub repo (the repo is also its own marketplace), and as plain files for other tools. There is no npm package: `package.json` is `private`.
+The kit ships three ways from one repository:
+
+| Channel | What people run | Updated by |
+|---|---|---|
+| Claude Code plugin | `/plugin marketplace add BeastabTech/agent-workflow-kit` | pushing to `production` |
+| GitHub, any tool | `npx github:BeastabTech/agent-workflow-kit#stable <command>`, `uses: ...pr-check.yml@stable` | moving the `stable` branch |
+| npm | `npx @beastabtech/agent-workflow-kit <command>` | `npm publish` (needs an npm account that owns the `@beastabtech` scope; the unscoped name `agent-workflow-kit` belongs to someone else) |
+
+## Stable channel
+
+`stable` is a branch that always points at the release people should use by default. A new release does not move it: publish first, let it prove itself, then promote.
+
+```bash
+git push origin v0.5.0^{commit}:refs/heads/stable   # promote; a fast-forward, never a force push
+gh release edit v0.5.0 --latest                     # the release page shows the same one as latest
+npm dist-tag add @beastabtech/agent-workflow-kit@0.5.0 stable   # once the package is on npm
+```
+
+To release a version that is not stable yet, create its GitHub release with `--prerelease` and publish to npm with `--tag next`; promote it later with the three commands above.
 
 ## Before each release
 
@@ -24,6 +42,7 @@ git add -A && git commit -m "chore: release 0.2.0"
 git switch production && git pull
 git tag v0.2.0 && git push origin v0.2.0
 gh release create v0.2.0 --title "v0.2.0" --notes-file <(sed -n '/## 0.2.0/,/## 0.1.0/p' CHANGELOG.md | sed '$d')
+npm publish                                        # reads publishConfig.access = public; add --tag next for a not-yet-stable version
 ```
 
 Pushing to `production` and publishing a release are outward-facing: do them yourself, or tell the agent explicitly.

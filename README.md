@@ -56,7 +56,11 @@ node ../agent-workflow-kit/scripts/init-project.js --target . --tools codex,curs
 node ../agent-workflow-kit/scripts/export-skills.js --target . --to agents
 ```
 
+Or without a clone: `npx github:BeastabTech/agent-workflow-kit#stable init --tools codex,cursor,gemini,copilot --with-git-hooks`.
+
 Optional: `git config core.hooksPath .githooks` turns on the git guard for every tool.
+
+**Remove it again.** `npx github:BeastabTech/agent-workflow-kit#stable remove` lists what would go, `remove --yes` deletes it: only files the kit wrote and nobody edited since, plus its `.gitignore` lines. Details in [docs/INSTALL.md](docs/INSTALL.md#remove).
 
 Existing files are never overwritten unless you pass `--force`, and `--dry-run` previews the changes. Update, remove, and the terminal (`claude plugin ...`) version are in [docs/INSTALL.md](docs/INSTALL.md).
 
@@ -187,7 +191,7 @@ A reusable GitHub Actions workflow: a secret scan plus a short AI review on ever
 jobs:
   check:
     permissions: { contents: read, pull-requests: write }
-    uses: BeastabTech/agent-workflow-kit/.github/workflows/pr-check.yml@v0.4.1
+    uses: BeastabTech/agent-workflow-kit/.github/workflows/pr-check.yml@stable
     with: { model: <your model id>, security: true }
     secrets: { api-key: "${{ secrets.ANTHROPIC_API_KEY }}" }
 ```

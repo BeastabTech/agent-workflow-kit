@@ -306,3 +306,81 @@ test('merge flow: init stores it, session-start states the rule, a feature branc
   assert.match(log('integrate/feature-into-dev'), /dev change/);
   assert.doesNotMatch(log('feature'), /dev change/); // the feature branch never received dev
 });
+
+// ---- npm package, install manifest and removal
+const { remove } = require('../scripts/remove-project');
+const MF = require('../scripts/lib/manifest');
+const cli = (cwd, ...a) => sp(process.execPath, [path.join(ROOT, 'bin', 'agent-workflow-kit.js'), ...a], { cwd, encoding: 'utf8' });
+const tree = (dir) => sp('git', ['ls-files', '--others', '--cached', '--exclude-standard'], { cwd: dir, encoding: 'utf8' }).stdout.split('\n').filter(Boolean).sort();
+
+test('remove undoes init: unchanged kit files go, edited ones and the project\'s own files stay, .gitignore is restored', () => {
+  const { dir } = tmpRepo();
+  fs.writeFileSync(path.join(dir, '.gitignore'), 'node_modules/\n');
+  fs.mkdirSync(path.join(dir, 'docs'));
+  fs.writeFileSync(path.join(dir, 'docs', 'mine.md'), '# mine\n');
+  const before = tree(dir);
+  const r = init({ target: dir, tools: 'claude,codex', 'with-git-hooks': true });
+  exportSkills({ target: dir, to: 'agents' });
+  const m = MF.read(dir);
+  for (const rel of r.written) assert.ok(m.files[rel], `${rel} missing from the manifest`);
+  assert.ok(Object.keys(m.files).some((f) => f.startsWith('.agents/skills/')));
+  assert.ok(m.gitignore.includes('.agents/.budget/') && !m.gitignore.includes('node_modules/'));
+
+  fs.appendFileSync(path.join(dir, 'AGENTS.md'), '\nOur own rule.\n'); // the owner edited this one
+  runHook('pre-agent', { session_id: 's', cwd: dir, tool_input: { prompt: 'p', description: 'd', subagent_type: 'reviewer' } }); // local state
+
+  const dry = remove({ target: dir });
+  assert.equal(dry.applied, false);
+  assert.deepEqual(dry.keptEdited, ['AGENTS.md']);
+  assert.ok(fs.existsSync(path.join(dir, '.agents', 'config.json'))); // a dry run deletes nothing
+
+  const done = remove({ target: dir, yes: true });
+  assert.deepEqual(done.keptEdited, ['AGENTS.md']);
+  assert.ok(done.localState.includes('.agents/.budget/'));
+  assert.equal(fs.readFileSync(path.join(dir, '.gitignore'), 'utf8'), 'node_modules/\n');
+  assert.deepEqual(tree(dir), [...before, '.agents/kit-manifest.json', 'AGENTS.md'].sort());
+  assert.deepEqual(Object.keys(MF.read(dir).files), ['AGENTS.md']); // kept so a later run can finish
+
+  remove({ target: dir, yes: true, force: true });
+  assert.deepEqual(tree(dir), before);
+  assert.equal(fs.existsSync(path.join(dir, '.agents')), false);
+});
+
+test('remove without a manifest deletes nothing; a manifest cannot point outside the project', () => {
+  const { dir } = tmpRepo();
+  fs.mkdirSync(path.join(dir, '.agents', 'tools'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.agents', 'tools', 'msg.js'), '');
+  fs.writeFileSync(path.join(dir, 'AGENTS.md'), '# old install\n');
+  const r = remove({ target: dir, yes: true });
+  assert.deepEqual(r.removed, []);
+  assert.match(r.notes.join(' '), /No install manifest.*Kit paths found: AGENTS\.md, \.agents/);
+  assert.ok(fs.existsSync(path.join(dir, 'AGENTS.md')));
+  assert.deepEqual(remove({ target: dir, yes: true, force: true }).removed, ['.agents/tools/']);
+  assert.ok(fs.existsSync(path.join(dir, 'AGENTS.md'))); // never guessed at
+
+  const outside = path.join(path.dirname(dir), `outside-${path.basename(dir)}.txt`);
+  fs.writeFileSync(outside, 'keep');
+  fs.mkdirSync(path.join(dir, '.agents'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.agents', 'kit-manifest.json'), JSON.stringify({ files: { [`../${path.basename(outside)}`]: MF.hashFile(outside), [outside]: MF.hashFile(outside) } }));
+  remove({ target: dir, yes: true, force: true });
+  assert.equal(fs.readFileSync(outside, 'utf8'), 'keep');
+});
+
+test('npm package: the CLI routes to the scripts, works on the current folder, and ships what it needs', () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+  assert.notEqual(pkg.private, true);
+  assert.equal(pkg.publishConfig.access, 'public');
+  assert.deepEqual(pkg.dependencies || {}, {}); // the kit stays zero-dependency
+  for (const f of [...pkg.files.filter((x) => !x.startsWith('!')), ...Object.values(pkg.bin)]) assert.ok(fs.existsSync(path.join(ROOT, f)), `${f} is listed in package.json but missing`);
+  assert.ok(pkg.files.includes('hooks') && pkg.files.includes('.claude-plugin')); // the package is also the plugin
+
+  const { dir } = tmpRepo();
+  assert.equal(cli(dir, 'version').stdout.trim(), pkg.version);
+  assert.match(cli(dir, 'help').stdout, /init[\s\S]*export-skills[\s\S]*remove/);
+  assert.equal(cli(dir, 'nonsense').status, 1);
+  assert.equal(cli(dir, 'init', '--preset', 'lite', '--tools', 'claude').status, 0);
+  assert.ok(fs.existsSync(path.join(dir, 'AGENTS.md')) && fs.existsSync(path.join(dir, '.agents', 'kit-manifest.json')));
+  assert.equal(JSON.parse(cli(dir, 'remove').stdout).applied, false);
+  assert.equal(JSON.parse(cli(dir, 'remove', '--yes').stdout).applied, true);
+  assert.equal(fs.existsSync(path.join(dir, 'AGENTS.md')), false);
+});
