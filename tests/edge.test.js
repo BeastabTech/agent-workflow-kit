@@ -218,6 +218,10 @@ test('init: suggests .gitignore lines for what exists, adds the ones the owner a
   const s = suggestIgnores(dir);
   assert.deepEqual(s.missing, ['.env', '.env.*', '!.env.example', 'node_modules/']); // build/ is committed on purpose: left alone
   assert.deepEqual(s.tracked, ['.env.staging']);
+  // templates are not env files, also with an environment name before the suffix
+  for (const f of ['.env.example', 'apps/mobile/.env.production.example', '.env.local.sample']) fs.mkdirSync(path.dirname(path.join(dir, f)), { recursive: true }), fs.writeFileSync(path.join(dir, f), 'A=\n');
+  git('add', '-f', '.env.example', 'apps/mobile/.env.production.example', '.env.local.sample');
+  assert.deepEqual(suggestIgnores(dir).tracked, ['.env.staging']);
 
   const dry = init({ target: dir, tools: 'claude', 'dry-run': true });
   assert.deepEqual(dry.gitignoreSuggest, s.missing);

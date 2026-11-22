@@ -5,6 +5,7 @@
 - Checks before rules. The `lessons` skill starts with a decision order: a check that fails (test, type, lint, hook), then a design where the mistake cannot be made, then deleting the bad example, and only then a written lesson or a rule. `self-review` asks for evidence a reviewer can check (screenshot or recording for anything a user sees, states exercised for a flow, before and after numbers for performance) and the Done report has a line for it. `safe-change` and `closeout` remove the pattern a change replaced, so the next agent does not copy it. `manager` checks the type check, lint and tests are reliable before adding agents.
 - Comment rule for projects: a comment says why; none that excuses a shortcut; a comment a change makes false is fixed in that change; what must always hold is a test or a type.
 - `AGENTS.md` template tells agents on any tool where the team's remembered decisions and the open setup questions are (`.agents/config.json`: `mergeFlow`, `unset`).
+- Fix: an env template with an environment name before the suffix (`.env.production.example`) was treated as a real env file: `init` listed it under `trackedEnvFiles` and the secret scan refused to commit it. Templates are now recognised whatever comes between `.env` and `.example` / `.sample` / `.template` / `.dist` / `.defaults`.
 - The kit has its own `AGENTS.md` (and a `.claude/CLAUDE.md` pointer) for agents working on the kit: map, commands, rules for a change, traps.
 
 ## 0.5.1

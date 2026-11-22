@@ -68,7 +68,8 @@ function addedLinesFromDiff(diff) {
 }
 
 const ENV_FILE = /(^|\/)\.env(\.[^/]+)?$/;
-const ENV_TEMPLATE = /(^|\/)\.env\.(example|sample|template|dist|defaults)$/;
+// A template may name an environment before the suffix: `.env.production.example` is a template too.
+const ENV_TEMPLATE = /(^|\/)\.env(\.[^/]+)*\.(example|sample|template|dist|defaults)$/;
 
 function isEnvFile(p) {
   return ENV_FILE.test(p) && !ENV_TEMPLATE.test(p);

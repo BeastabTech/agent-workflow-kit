@@ -215,7 +215,8 @@ function suggestIgnores(target) {
     if (rel !== '.DS_Store' && !/^\.env/.test(rel) && run(['ls-files', '--', rel]).stdout.trim()) continue; // committed on purpose (a real `build/` or `target/` source folder)
     for (const l of lines) if (!missing.includes(l)) missing.push(l);
   }
-  const tracked = run(['ls-files']).stdout.split('\n').filter((f) => /(^|\/)\.env(\.[^/]+)?$/.test(f) && !/\.env\.(example|sample|template|dist|defaults)$/.test(f));
+  const { isEnvFile } = require('./lib/secrets'); // one definition of "env file", shared with the secret scan
+  const tracked = run(['ls-files']).stdout.split('\n').filter((f) => f && isEnvFile(f));
   return { missing, tracked };
 }
 
