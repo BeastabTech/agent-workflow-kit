@@ -1,8 +1,12 @@
 # Changelog
 
+## 0.5.1
+
+- The npm package is named `@beastab/agent-workflow-kit` (the maintainer's npm scope). 0.5.0 carried `@beastabtech/...`, a scope that does not exist on npm, and was never published there. No other change.
+
 ## 0.5.0
 
-- One command, no clone: `npx github:BeastabTech/agent-workflow-kit#stable init` (also `export-skills`, `remove`, `version`). The repository is now a publishable npm package (`@beastabtech/agent-workflow-kit`, zero dependencies) with a small CLI in `bin/` that routes to the existing scripts.
+- One command, no clone: `npx github:BeastabTech/agent-workflow-kit#stable init` (also `export-skills`, `remove`, `version`). The repository is now a publishable npm package (zero dependencies; named `@beastab/agent-workflow-kit` from 0.5.1) with a small CLI in `bin/` that routes to the existing scripts.
 - Removal: `remove` undoes `init` and `export-skills`. `init` now writes `.agents/kit-manifest.json`, the files it wrote with a hash of each; `remove` deletes only files that are still exactly what the kit wrote, keeps and lists edited ones (`--force` removes them too), deletes the kit's local state, and takes its lines out of `.gitignore`. It shows the list first and deletes only with `--yes`.
 - Stable channel: a `stable` branch points at the release to use by default (`#stable`, `@stable`); new releases are promoted to it deliberately. See `docs/PUBLISHING.md`.
 

@@ -6,7 +6,7 @@ The kit ships three ways from one repository:
 |---|---|---|
 | Claude Code plugin | `/plugin marketplace add BeastabTech/agent-workflow-kit` | pushing to `production` |
 | GitHub, any tool | `npx github:BeastabTech/agent-workflow-kit#stable <command>`, `uses: ...pr-check.yml@stable` | moving the `stable` branch |
-| npm | `npx @beastabtech/agent-workflow-kit <command>` | `npm publish` (needs an npm account that owns the `@beastabtech` scope; the unscoped name `agent-workflow-kit` belongs to someone else) |
+| npm | `npx @beastab/agent-workflow-kit <command>` | `npm publish` from the `beastab` npm account, which needs a security key or passkey as 2FA (the unscoped name `agent-workflow-kit` belongs to someone else) |
 
 ## Stable channel
 
@@ -15,7 +15,7 @@ The kit ships three ways from one repository:
 ```bash
 git push origin v0.5.0^{commit}:refs/heads/stable   # promote; a fast-forward, never a force push
 gh release edit v0.5.0 --latest                     # the release page shows the same one as latest
-npm dist-tag add @beastabtech/agent-workflow-kit@0.5.0 stable   # once the package is on npm
+npm dist-tag add @beastab/agent-workflow-kit@0.5.0 stable   # once the package is on npm
 ```
 
 To release a version that is not stable yet, create its GitHub release with `--prerelease` and publish to npm with `--tag next`; promote it later with the three commands above.

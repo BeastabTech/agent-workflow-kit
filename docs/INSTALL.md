@@ -31,7 +31,9 @@ npx github:BeastabTech/agent-workflow-kit#stable init --tools claude,codex,curso
 npx github:BeastabTech/agent-workflow-kit#stable export-skills --to agents
 ```
 
-`#stable` is the release the maintainers marked stable; use a tag such as `#v0.5.0` to pin one version. `init` writes the files every agent tool reads (`AGENTS.md` and the per-tool pointers), so whichever agent works in the repo afterwards follows the same rules. Commit what it wrote. Add `--dry-run` to preview, `--preset lite|low-tokens|auto|normal|best` to pick the edition.
+The same commands from npm: `npx @beastab/agent-workflow-kit init ...` (the default version there is the latest release; add `@stable` after the name for the stable one).
+
+`#stable` is the release the maintainers marked stable; use a tag such as `#v0.5.1` to pin one version. `init` writes the files every agent tool reads (`AGENTS.md` and the per-tool pointers), so whichever agent works in the repo afterwards follows the same rules. Commit what it wrote. Add `--dry-run` to preview, `--preset lite|low-tokens|auto|normal|best` to pick the edition.
 
 ## Codex, Cursor, Gemini CLI, Copilot or any other agent
 

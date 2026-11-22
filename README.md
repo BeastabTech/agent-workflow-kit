@@ -56,7 +56,7 @@ node ../agent-workflow-kit/scripts/init-project.js --target . --tools codex,curs
 node ../agent-workflow-kit/scripts/export-skills.js --target . --to agents
 ```
 
-Or without a clone: `npx github:BeastabTech/agent-workflow-kit#stable init --tools codex,cursor,gemini,copilot --with-git-hooks`.
+Or without a clone: `npx github:BeastabTech/agent-workflow-kit#stable init --tools codex,cursor,gemini,copilot --with-git-hooks` (from npm: `npx @beastab/agent-workflow-kit init ...`).
 
 Optional: `git config core.hooksPath .githooks` turns on the git guard for every tool.
 
