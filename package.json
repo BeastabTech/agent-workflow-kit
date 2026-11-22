@@ -1,6 +1,6 @@
 {
   "name": "@beastab/agent-workflow-kit",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "A team workflow for coding agents (Claude Code, Codex, Cursor, Gemini CLI, Copilot): short project memory, rules, safe-change and review checklists, plan-first orchestration, safety hooks, and a PR check. Zero dependencies.",
   "license": "MIT",
   "author": "BeastabTech (https://github.com/BeastabTech)",
