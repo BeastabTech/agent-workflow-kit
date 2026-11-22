@@ -8,7 +8,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { loadConfig, enabled } = require('../lib/config');
+const { loadConfig, enabled, localDir } = require('../lib/config');
 const presets = require('../lib/presets');
 const { analyse, problems } = require('../lib/done-gate');
 const { readInput } = require('../lib/hook-io');
@@ -30,7 +30,7 @@ function main() {
   } catch (_) {}
   if (n >= gate.maxBlocks) process.exit(0);
   try {
-    fs.mkdirSync(path.dirname(file), { recursive: true });
+    localDir(path.dirname(file));
     fs.writeFileSync(file, JSON.stringify({ blocks: n + 1 }));
   } catch (_) {}
   process.stdout.write(JSON.stringify({ decision: 'block', reason: `[done-gate] ${found.join(' ')}` }));

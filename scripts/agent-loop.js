@@ -19,7 +19,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { spawnSync } = require('child_process');
-const { loadConfig } = require('./lib/config');
+const { loadConfig, localDir } = require('./lib/config');
 const B = require('./lib/budget');
 
 function parseArgs(argv) {
@@ -44,7 +44,7 @@ const read = (root, name) => {
   }
 };
 const write = (root, name, st) => {
-  fs.mkdirSync(path.dirname(file(root, name)), { recursive: true });
+  localDir(path.dirname(file(root, name)));
   fs.writeFileSync(file(root, name), JSON.stringify(st, null, 2));
 };
 

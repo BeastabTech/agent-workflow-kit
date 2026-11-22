@@ -44,6 +44,9 @@ function main() {
       const m = machine(lim);
       if (m) notes.push(`${m.text} Re-check with: node .agents/tools/budget.js machine.`);
     } catch (_) {}
+    if (cfg.mergeFlow.noBackMerge.length) notes.push(`Merge rule: never merge, pull or rebase ${cfg.mergeFlow.noBackMerge.join(', ')} into a feature branch. To release a feature there, resolve conflicts on a branch cut from the target (${cfg.mergeFlow.integrationPrefix}...), see the git-workflow skill.`);
+    const unset = Array.isArray(cfg.unset) ? cfg.unset.filter((k) => typeof k === 'string').slice(0, 8) : [];
+    if (unset.length) notes.push(`Setup questions not asked yet: ${unset.join(', ')} (defaults apply). When a task first needs one, ask the user that one question, write the answer to .agents/config.json and remove it from "unset" (init skill, "Ask later").`);
     const handoff = path.join(agentsDir, 'HANDOFF.md');
     try {
       const st = fs.statSync(handoff);

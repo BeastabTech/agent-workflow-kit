@@ -126,6 +126,8 @@ function inbox(dir, a) {
   const fresh = a.all ? mine : mine.filter((m) => !last || (m.time && m.time > last));
   if (msgs.length) {
     fs.mkdirSync(readDir, { recursive: true });
+    const ig = path.join(readDir, '.gitignore'); // read markers are per machine: the folder ignores itself
+    if (!fs.existsSync(ig)) fs.writeFileSync(ig, '*\n');
     fs.writeFileSync(mark, msgs[msgs.length - 1].time || '');
   }
   return fresh;

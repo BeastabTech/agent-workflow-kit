@@ -24,13 +24,17 @@ const DEFAULTS = {
   secretScan: { allowPaths: [] },
   commands: {},
   limits: {},
+  // How the team merges, as the user decided it (git-workflow skill, "Merge a feature into another branch").
+  // noBackMerge: branches that run ahead (dev, staging) and must never be merged, pulled or rebased into
+  // a feature branch; conflicts with them are resolved on a branch cut from the target instead.
+  mergeFlow: { noBackMerge: [], integrationPrefix: 'integrate/', notes: [] },
   planGate: true, // worker sub-agents ask the human until .agents/PLAN.md says Status: approved
 };
 
 // minimal keeps only the clear safety nets; strict turns warnings and soft asks into hard stops.
 const PROFILES = ['minimal', 'standard', 'strict'];
 const REPLY_STYLES = ['normal', 'caveman-lite', 'caveman-full'];
-const MINIMAL_OFF = new Set(['done-gate', 'explicit-staging', 'protected-branch', 'protected-files', 'env-files', 'agent-budget', 'plan-gate', 'machine-check']);
+const MINIMAL_OFF = new Set(['done-gate', 'explicit-staging', 'protected-branch', 'protected-files', 'env-files', 'agent-budget', 'plan-gate', 'machine-check', 'back-merge']);
 
 function git(args, cwd) {
   try {
@@ -71,6 +75,8 @@ function loadConfig(cwd) {
   const team = readJson(file);
   const cfg = { ...DEFAULTS, ...(team || {}) };
   cfg.secretScan = { ...DEFAULTS.secretScan, ...((team && team.secretScan) || {}) };
+  cfg.mergeFlow = { ...DEFAULTS.mergeFlow, ...((team && team.mergeFlow) || {}) };
+  if (!Array.isArray(cfg.mergeFlow.noBackMerge)) cfg.mergeFlow.noBackMerge = [];
   cfg.planGate = !/^(false|0|no|off)$/i.test(String(cfg.planGate));
   cfg.root = root;
   cfg.hasTeamConfig = Boolean(team);
@@ -96,9 +102,22 @@ function loadConfig(cwd) {
   return cfg;
 }
 
+/**
+ * Create a folder for the kit's machine-local state (.agents/.budget, .gate, .loops) and make it ignore
+ * itself: a .gitignore holding `*` inside it. The hooks run in every repository, also ones where `init`
+ * never added the kit's lines to the project's .gitignore, and local state must never show up in
+ * `git status` or get committed. Returns the folder.
+ */
+function localDir(dir) {
+  fs.mkdirSync(dir, { recursive: true });
+  const ignore = path.join(dir, '.gitignore');
+  if (!fs.existsSync(ignore)) fs.writeFileSync(ignore, '*\n');
+  return dir;
+}
+
 function enabled(cfg, check) {
   if (cfg.profile === 'minimal' && MINIMAL_OFF.has(check)) return false;
   return !cfg.hooksOff && !cfg.disabled.has(check);
 }
 
-module.exports = { PROFILES, DEFAULTS, git, projectRoot, sharedRoot, loadConfig, enabled, readJson };
+module.exports = { PROFILES, DEFAULTS, git, projectRoot, sharedRoot, loadConfig, enabled, readJson, localDir };

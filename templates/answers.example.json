@@ -12,14 +12,41 @@
     "dev": "npm run dev"
   },
   "baseBranch": "main",
-  "protectedBranches": ["main"],
-  "protectedFiles": ["src/db/schema.sql", "src/auth/**"],
+  "protectedBranches": [
+    "main"
+  ],
+  "protectedFiles": [
+    "src/db/schema.sql",
+    "src/auth/**"
+  ],
   "workMode": "shared",
   "stateSync": "git",
   "commitPolicy": "on-request",
   "timezone": "UTC",
   "owners": [
-    { "area": "API routes", "paths": "src/routes/**", "owner": "<api owner>" },
-    { "area": "Database and auth", "paths": "src/db/**, src/auth/**", "owner": "<platform owner>" }
-  ]
+    {
+      "area": "API routes",
+      "paths": "src/routes/**",
+      "owner": "<api owner>"
+    },
+    {
+      "area": "Database and auth",
+      "paths": "src/db/**, src/auth/**",
+      "owner": "<platform owner>"
+    }
+  ],
+  "gitignore": [
+    ".env",
+    ".env.*",
+    "!.env.example",
+    "node_modules/"
+  ],
+  "mergeFlow": {
+    "noBackMerge": [
+      "dev"
+    ],
+    "notes": [
+      "PR into dev; the owner of the area approves"
+    ]
+  }
 }

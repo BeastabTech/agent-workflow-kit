@@ -292,7 +292,7 @@ test('agents started in the same message: every hook sees the others, the limit 
   assert.equal(res.filter((r) => r === 'allow').length, 4);
   assert.equal(res.filter((r) => r === 'ask').length, 4);
   assert.match(status(dir, 'race'), /4 started.*4 running/);
-  assert.deepEqual(fs.readdirSync(path.join(dir, '.agents', '.budget')).filter((f) => !f.endsWith('.json')), []); // no lock or tmp left
+  assert.deepEqual(fs.readdirSync(path.join(dir, '.agents', '.budget')).filter((f) => !f.endsWith('.json')), ['.gitignore']); // no lock or tmp left; the folder ignores itself
 });
 
 test('AWK_DISABLE=agent-budget leaves the machine check and the plan gate on; each has its own switch', () => {

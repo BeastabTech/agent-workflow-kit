@@ -18,7 +18,7 @@ claude plugin marketplace add BeastabTech/agent-workflow-kit
 claude plugin install agent-workflow-kit@agent-workflow-kit
 ```
 
-Then open your repo in Claude Code and say **"set up the agent workflow here"**. The `init` skill asks a few questions and writes the files. Restart Claude Code if the skills do not show up.
+Then open your repo in Claude Code and say **"set up the agent workflow here"**. The `init` skill reads the repo, asks seven questions it cannot guess (edition, project, commands, branches, agent tools, state sync, `.gitignore` additions) and writes the files. Settings it did not ask about (`owners`, `protectedFiles`, `workMode`, `commitPolicy`, `timezone`, `mergeFlow`) keep their defaults, are listed under `"unset"` in `.agents/config.json`, and are asked one at a time when a task first needs them. Restart Claude Code if the skills do not show up.
 
 Check it worked: type `/agent-workflow-kit:` and the skill list appears.
 

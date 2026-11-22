@@ -4,11 +4,13 @@
  * too many at once, or too much context is handed to them. Token numbers are ESTIMATES
  * (an assumed size per agent plus prompt length / 4); they are for early warning, not billing.
  *
- * State lives in <project>/.agents/.budget/<session>.json (gitignored, local to one machine).
+ * State lives in <project>/.agents/.budget/<session>.json. The folder ignores itself (config.localDir),
+ * so it stays out of git in every repository, set up by `init` or not.
  */
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { localDir } = require('./config');
 
 const DEFAULT_LIMITS = {
   maxParallel: 4, // sub-agents running at the same time
@@ -56,7 +58,7 @@ function load(root, sessionId) {
 
 function save(root, sessionId, state) {
   const file = stateFile(root, sessionId);
-  fs.mkdirSync(path.dirname(file), { recursive: true });
+  localDir(path.dirname(file));
   const tmp = `${file}.${process.pid}.tmp`; // write then rename: a reader never sees half a file
   fs.writeFileSync(tmp, JSON.stringify(state));
   fs.renameSync(tmp, file);
@@ -73,7 +75,7 @@ function withLock(root, sessionId, fn) {
   const lock = `${stateFile(root, sessionId)}.lock`;
   let fd = null;
   try {
-    fs.mkdirSync(path.dirname(lock), { recursive: true });
+    localDir(path.dirname(lock));
   } catch (_) {}
   const until = Date.now() + 3000;
   while (fd === null) {

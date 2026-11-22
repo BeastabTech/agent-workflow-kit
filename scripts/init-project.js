@@ -65,7 +65,7 @@ function normalise(raw) {
       dev: c.dev || todo('dev server'),
     },
     baseBranch: a.baseBranch || 'main',
-    protectedBranches: list(a.protectedBranches, ['main', 'production']),
+    protectedBranches: list(a.protectedBranches, [...new Set(['main', 'production', a.baseBranch || 'main'])]),
     protectedFiles: list(a.protectedFiles, []),
     workMode,
     stateSync,
@@ -163,6 +163,57 @@ function findExistingDoc(target, rel) {
   return hit ? path.relative(target, hit).split(path.sep).join('/') : null;
 }
 
+/** Settings `init` may leave at their default and ask about later, when a task first needs them (init skill, "Ask later"). */
+const ASK_LATER = ['owners', 'protectedFiles', 'workMode', 'commitPolicy', 'timezone', 'mergeFlow'];
+
+/** The repository's default branch as git knows it, or null. Used when the answers name no base branch. */
+function detectBaseBranch(target) {
+  const git = (a) => {
+    try {
+      return require('child_process').execFileSync('git', a, { cwd: target, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    } catch (_) {
+      return '';
+    }
+  };
+  return git(['symbolic-ref', '--short', 'refs/remotes/origin/HEAD']).replace(/^origin\//, '') || git(['branch', '--show-current']) || null;
+}
+
+/** Things that exist in the project and belong in .gitignore: [path on disk, lines to add]. */
+const IGNORE_CANDIDATES = [
+  ['.env', ['.env', '.env.*', '!.env.example']],
+  ['.env.local', ['.env', '.env.*', '!.env.example']],
+  ['node_modules', ['node_modules/']],
+  ['dist', ['dist/']],
+  ['build', ['build/']],
+  ['.next', ['.next/']],
+  ['coverage', ['coverage/']],
+  ['__pycache__', ['__pycache__/']],
+  ['.venv', ['.venv/']],
+  ['venv', ['venv/']],
+  ['target', ['target/']],
+  ['.DS_Store', ['.DS_Store']],
+  ['.idea', ['.idea/']],
+];
+
+/**
+ * Read-only .gitignore check for the owner to decide on. `missing`: lines for paths that exist and git
+ * does not ignore. `tracked`: env files already committed (ignoring them is not enough: they must be
+ * removed from git and their secrets rotated). Empty outside a git repository.
+ */
+function suggestIgnores(target) {
+  const run = (a) => require('child_process').spawnSync('git', a, { cwd: target, encoding: 'utf8' });
+  if (run(['rev-parse', '--git-dir']).status !== 0) return { missing: [], tracked: [] };
+  const missing = [];
+  for (const [rel, lines] of IGNORE_CANDIDATES) {
+    if (!fs.existsSync(path.join(target, rel))) continue;
+    if (run(['check-ignore', '-q', rel]).status === 0) continue;
+    if (rel !== '.DS_Store' && !/^\.env/.test(rel) && run(['ls-files', '--', rel]).stdout.trim()) continue; // committed on purpose (a real `build/` or `target/` source folder)
+    for (const l of lines) if (!missing.includes(l)) missing.push(l);
+  }
+  const tracked = run(['ls-files']).stdout.split('\n').filter((f) => /(^|\/)\.env(\.[^/]+)?$/.test(f) && !/\.env\.(example|sample|template|dist|defaults)$/.test(f));
+  return { missing, tracked };
+}
+
 function ensureGitignore(target, lines, dry) {
   const file = path.join(target, '.gitignore');
   let text = '';
@@ -180,6 +231,9 @@ function init(opts) {
   const raw = opts.answers ? JSON.parse(fs.readFileSync(path.resolve(opts.answers), 'utf8')) : {};
   raw.target = target;
   if (opts.preset) raw.preset = opts.preset;
+  if (!raw.baseBranch) raw.baseBranch = detectBaseBranch(target) || undefined;
+  // Asked now or left for later? A setting the answers do not mention keeps its default and is listed in `unset`.
+  const unset = ASK_LATER.filter((k) => raw[k] === undefined || raw[k] === null || raw[k] === '');
   const n = normalise(raw);
   const v = vars(n);
   const dry = Boolean(opts['dry-run']);
@@ -295,6 +349,8 @@ function init(opts) {
     limits: { ...DEFAULT_LIMITS, ...edition.limits },
     timezone: n.timezone,
     tools: n.tools,
+    mergeFlow: { noBackMerge: list(raw.mergeFlow && raw.mergeFlow.noBackMerge, []), integrationPrefix: (raw.mergeFlow && raw.mergeFlow.integrationPrefix) || 'integrate/', notes: list(raw.mergeFlow && raw.mergeFlow.notes, []) },
+    unset,
   };
   const cfgFile = path.join(target, '.agents', 'config.json');
   if (fs.existsSync(cfgFile) && !opts.force) report.kept.push('.agents/config.json');
@@ -318,8 +374,14 @@ function init(opts) {
   }
 
   const ignore = ['.agents/LOG.md', '.agents/.read/', '.agents/.budget/', '.agents/.loops/', '.agents/.gate/'];
+  if (n.tools.includes('claude')) ignore.push('.claude/settings.local.json'); // personal permissions and settings, never shared
+  ignore.push(...list(raw.gitignore, [])); // lines the owner said yes to (see suggestIgnores)
   if (n.stateSync !== 'git') ignore.push('.agents/STATE.md', '.agents/HANDOFF.md', '.agents/BUGS.md', '.agents/PLAN.md');
   report.gitignore = ensureGitignore(target, ignore, dry);
+  const sug = suggestIgnores(target);
+  report.gitignoreSuggest = sug.missing.filter((l) => !ignore.includes(l));
+  report.trackedEnvFiles = sug.tracked;
+  report.unset = unset;
   return report;
 }
 
@@ -343,4 +405,4 @@ if (require.main === module) {
   } else finish(opts);
 }
 
-module.exports = { init, normalise, vars, render, TOOLS };
+module.exports = { init, normalise, vars, render, TOOLS, suggestIgnores, ASK_LATER };
