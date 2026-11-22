@@ -8,6 +8,8 @@ The kit ships three ways from one repository:
 | GitHub, any tool | `npx github:BeastabTech/agent-workflow-kit#stable <command>`, `uses: ...pr-check.yml@stable` | moving the `stable` branch |
 | npm | `npx @beastab/agent-workflow-kit <command>` | `npm publish` from the `beastab` npm account, which needs a security key or passkey as 2FA (the unscoped name `agent-workflow-kit` belongs to someone else) |
 
+GitHub's "Packages" box on the repository page lists only GitHub's own registry, not npmjs.com. `.github/workflows/publish-github-packages.yml` publishes the same files there as `@beastabtech/agent-workflow-kit` whenever a GitHub release is published (or by hand: `gh workflow run publish-github-packages.yml -f ref=v0.5.1`). People install from npmjs.com; the GitHub copy is for visibility.
+
 ## Stable channel
 
 `stable` is a branch that always points at the release people should use by default. A new release does not move it: publish first, let it prove itself, then promote.

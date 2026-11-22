@@ -1,5 +1,7 @@
 # Agent Workflow Kit
 
+[![npm](https://img.shields.io/npm/v/@beastab/agent-workflow-kit?label=npm)](https://www.npmjs.com/package/@beastab/agent-workflow-kit) [![stable](https://img.shields.io/npm/v/@beastab/agent-workflow-kit/stable?label=stable)](https://www.npmjs.com/package/@beastab/agent-workflow-kit) [![ci](https://github.com/BeastabTech/agent-workflow-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/BeastabTech/agent-workflow-kit/actions/workflows/ci.yml)
+
 A team workflow for coding agents, packaged as a **Claude Code plugin** and as **plain templates that work with any agent**: Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot, or anything else that reads `AGENTS.md`.
 
 It gives a repo:
