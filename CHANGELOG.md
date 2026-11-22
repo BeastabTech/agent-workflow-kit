@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0
+
+- PR check: a reusable workflow (`.github/workflows/pr-check.yml`) any repository can call for a secret scan and a short AI review of each pull request, with its own model and API key (`anthropic`, or any OpenAI-compatible API). Switches: `review`, `security`, `secret-scan`, `fail-on`. Two comment levels, each with the failure case and the fix; repeats are not posted twice; no findings posts nothing. The pull request's code is never checked out, the model gets no tools, and fork PRs get no key. See `docs/PR_CHECK.md`.
+
+Spawn counting fixes:
+
+- A spawn you approve after the hook asked is now counted. Before, it ran uncounted and its stop marked a different agent as finished, so the running count drifted low. New `SubagentStart` hook (`scripts/hooks/subagent-start.js`) counts the approved spawn and ties the agent's id to it; `SubagentStop` frees that agent's own slot by id. A declined spawn still leaves no phantom agent. `budget.js status` lists such spawns as `asked`.
+- Agents started in the same message are each counted: the spawn hooks take a lock file around the session state and write it with a rename. Before, hooks running at the same moment overwrote each other and more agents than `maxParallel` went through without a question.
+- `AWK_DISABLE=agent-budget` no longer turns off the machine check and the plan gate. Each has its own switch (`machine-check`, `plan-gate`). The `minimal` profile keeps all three off, as before.
+
 ## 0.3.1
 
 Review pass over 0.3.0; no new features.
